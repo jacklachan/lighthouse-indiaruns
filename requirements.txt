@@ -1,0 +1,28 @@
+# =====================================================================
+# Lighthouse — dependencies
+# ---------------------------------------------------------------------
+# The RANK-TIME step (rank.py) imports ONLY numpy, pandas, pyyaml.
+# Everything below the divider is used solely by precompute.py / app.py
+# and runs OUTSIDE the 5-minute, no-network ranking budget.
+# =====================================================================
+
+# ---- rank-time (CPU, no network) ----
+numpy==2.2.6
+pandas==2.3.3
+PyYAML==6.0.2
+
+# ---- precompute-only (network OK, no time budget) ----
+sentence-transformers==3.3.1
+# torch CPU wheel — install from the PyTorch CPU index:
+#   pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
+rank-bm25==0.2.2
+
+# ---- sandbox app ----
+streamlit==1.40.2
+
+# ---- deck generation ----
+python-pptx==1.0.2
+
+# ---- tests ----
+pytest==8.3.4

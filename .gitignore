@@ -1,0 +1,35 @@
+# ---- Challenge data: NEVER commit the 100K pool (grader supplies it) ----
+data/candidates.jsonl
+data/*.jsonl
+# The challenge bundle (brackets must be escaped — they are a gitignore glob class)
+\[PUB\] India_runs_data_and_ai_challenge/
+*India_runs_data_and_ai_challenge/
+__MACOSX/
+*.DS_Store
+.DS_Store
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ipynb_checkpoints/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ---- Large / regenerable artifacts ----
+# Embeddings are large; we keep them out of plain git. See README (git-lfs note).
+artifacts/cand_emb.npy
+artifacts/cand_emb_norm.npy
+artifacts/bm25_index.pkl
+artifacts/*.tmp
+
+# ---- Local scratch ----
+scratch/
+*.log
+submission.csv
+eval/eda_report.json
