@@ -172,9 +172,10 @@ def main():
             ("Single reproduce command: python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv → passes the official validator.", 0),
         ],
         "Results & Performance": [
-            ("vs naive keyword baseline (Claude-authored proxy labels, 221-candidate stratified set): composite 0.998 vs 0.553; NDCG@10 1.000 vs 0.577; MAP 0.998 vs 0.438.", 0),
-            ("Trap resistance: the keyword baseline puts 13/32 keyword-stuffers in its top-25; Lighthouse admits 0. Honeypots in top-100: 0 (DQ threshold >10%).", 0),
-            ("Ablation: defenses are layered (role_coherence component + gate both fight stuffers); removing the whole anti-trap stack drops composite to 0.984 and lets honeypots climb (median rank 209→144).", 0),
+            ("Label-INDEPENDENT evidence (no trust in our labels needed):", 0),
+            ("0 honeypots in the top-100 (audited over full 100K; DQ threshold >10%). All 100/100 hold an AI/ML/IR/DS/Search/NLP title — 0 non-technical; the sample_submission instead ranks HR/Accountants at #1–20.", 1),
+            ("Trap resistance: the keyword baseline puts 13/32 keyword-stuffers in its top-25; Lighthouse admits 0. Remove the anti-trap stack and honeypots climb (median rank 209→143).", 1),
+            ("Directional only (self-labeled — NOT absolute accuracy): vs keyword baseline composite 0.998 vs 0.553. Labeler & ranker share assumptions, so a ~perfect NDCG@10 = internal consistency, not validated accuracy — the gap + ablation deltas are the signal. A blind human-label harness ships for an independent check.", 0),
             (f"Constraints met: rank step CPU-only, no network, {args.runtime} over 100K; embeddings precomputed (~75 MB fp16); 36 tests green.", 0),
         ],
         "Technologies Used": [

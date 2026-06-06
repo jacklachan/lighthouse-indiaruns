@@ -58,27 +58,34 @@ The five scoring components: `semantic_fit`, `role_coherence`, `career_evidence`
 `final = base_weighted_sum × Π(hard-negative gates) × behavioral_modifier`, with honeypots
 zeroed. **No candidate data hits any API at rank-time.**
 
-## Results (vs. naive keyword baseline)
+## Results
 
-Measured on a Claude-authored, stratified 221-candidate proxy label set (`eval/results.md`;
-the official ground truth is hidden — the *relative* signals are the point):
+The evidence that matters here is **label-independent** — it doesn't rely on trusting any labels
+we authored. Full detail in [`eval/results.md`](eval/results.md).
 
-| System | NDCG@10 | NDCG@50 | MAP | P@10 | Composite |
-|---|---|---|---|---|---|
-| **Lighthouse** | **1.000** | 0.993 | 0.998 | 1.000 | **0.998** |
-| Keyword-count baseline | 0.577 | 0.563 | 0.438 | 0.600 | 0.553 |
+**Label-independent (the real results):**
 
-- **+0.445 composite** over the baseline. The keyword baseline floods its top-25 with **13/32
-  keyword-stuffers**; Lighthouse admits **0**.
-- **0 honeypots** in the top-100 (DQ threshold is >10%). The two planted non-fits rank low for
-  the right reasons (`CAND_0000001` Toronto/no-relocate; `CAND_0000002` Operations-Manager
-  trajectory), and the plain-language Tier-5 `CAND_0000031` ranks at the top.
-- Anti-trap logic is layered: see the ablation + trap-resistance tables in `eval/results.md`.
+- **0 honeypots** in the top-100 (independently audited over the full 100K; DQ threshold is >10%).
+- **All 100/100** of the top-100 hold an AI/ML/IR/DS/Search/NLP-aligned title; **0 are
+  non-technical**. The provided `sample_submission` (keyword count) instead ranks HR Managers and
+  Accountants at #1–20.
+- **Trap resistance:** the keyword baseline puts **13/32 keyword-stuffers** in its top-25;
+  Lighthouse admits **0**. The two planted non-fits rank low for the right reasons
+  (`CAND_0000001` Toronto/no-relocate; `CAND_0000002` Operations-Manager trajectory); the
+  plain-language Tier-5 `CAND_0000031` ranks #1.
+
+**Directional metrics (self-labeled — *not* a claim of absolute accuracy):** against a
+Claude-authored 221-candidate proxy set, composite **0.998 vs 0.553** for the keyword baseline
+(+0.445). The labeler and ranker share assumptions, so the near-perfect NDCG@10 reflects internal
+consistency, **not** validated accuracy — the meaningful signal is the *gap* to the baseline and
+the ablation deltas, not the absolute number. For an **independent** check, the repo ships a blind
+human-labeling harness (`scripts/make_blind_eval.py` → a human fills tiers → `eval/blind_compare.py`).
 
 Reproduce the eval:
 ```bash
-python eval/build_labels.py --candidates ./data/candidates.jsonl   # build Claude-authored labels
+python eval/build_labels.py --candidates ./data/candidates.jsonl   # Claude-authored proxy labels
 python eval/evaluate.py --candidates ./data/candidates.jsonl       # -> eval/results.md
+python scripts/make_blind_eval.py && python eval/blind_compare.py  # independent human check
 ```
 
 ## Tests
