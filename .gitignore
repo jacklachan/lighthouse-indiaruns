@@ -21,17 +21,17 @@ dist/
 venv/
 env/
 
-# ---- Large / regenerable artifacts ----
-# Embeddings are large; we keep them out of plain git. See README (git-lfs note).
-artifacts/cand_emb.npy
-artifacts/cand_emb_norm.npy
-artifacts/bm25_index.pkl
+# ---- Artifacts ----
+# cand_emb.npy is ~77MB (< GitHub's 100MB limit) and IS committed so the rank
+# step reproduces without a 69-min precompute. Checkpoints/logs are not.
+artifacts/_emb_partial.npy
+artifacts/_progress.json
+artifacts/precompute.log
 artifacts/*.tmp
 
 # ---- Local scratch ----
 scratch/
 *.log
-submission.csv
 submission_dev.csv
 eval/eda_report.json
 # regenerable dev/eval artifact dirs (the committed one is artifacts/)
