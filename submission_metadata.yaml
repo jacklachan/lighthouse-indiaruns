@@ -20,7 +20,7 @@ team_members:
 # Code and reproducibility
 # ============================================================================
 github_repo: "https://github.com/jacklachan/lighthouse-indiaruns"
-sandbox_link: "https://huggingface.co/spaces/jacklachan/lighthouse"
+sandbox_link: "https://huggingface.co/spaces/Auenchanters/lighthouse"
 reproduce_command: "python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv"
 
 # ============================================================================

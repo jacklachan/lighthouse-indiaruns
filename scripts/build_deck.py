@@ -186,7 +186,7 @@ def main():
         ],
         "Submission Assets": [
             ("GitHub: https://github.com/jacklachan/lighthouse-indiaruns", 0),
-            ("Live sandbox (HF Spaces): https://huggingface.co/spaces/jacklachan/lighthouse", 0),
+            ("Live sandbox (HF Spaces): https://huggingface.co/spaces/Auenchanters/lighthouse", 0),
             ("Reproduce: pip install -r requirements.txt → python precompute.py → python rank.py → python validate_submission.py submission.csv", 0),
             ("Demo video: [placeholder — add link before submission]", 0),
             ("AI use: Claude offline for JD parsing + eval labeling + coding assistant; no candidate data hit any API at rank-time (see submission_metadata.yaml).", 0),
