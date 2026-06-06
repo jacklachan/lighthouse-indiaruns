@@ -1,0 +1,179 @@
+{
+  "_meta": {
+    "title": "Senior AI Engineer — Founding Team @ Redrob AI",
+    "authored_by": "Claude (offline, reading job_description.docx)",
+    "authored_at": "2026-06-06",
+    "reference_date": "2026-06-06",
+    "note": "This rubric is a STATIC, committed artifact. rank.py reads it at rank-time; no LLM/API call is made during ranking. It encodes the gap between what the JD literally says and what it means, per the JD's own 'how to read between the lines' and 'final note for hackathon participants' sections."
+  },
+
+  "experience": {
+    "band_min": 5.0,
+    "band_max": 9.0,
+    "ideal_min": 6.0,
+    "ideal_max": 8.0,
+    "rationale": "JD: '5-9 years ... a range, not a requirement', ideal '6-8 years total, of which 4-5 in applied ML/AI at product companies'. Soft curve: peak inside ideal, gentle taper across the band, steeper outside. Strong signals can rescue out-of-band candidates, so this is a score component, not a hard gate.",
+    "soft": true
+  },
+
+  "facets": [
+    "Production experience with embeddings-based retrieval systems (sentence-transformers, OpenAI embeddings, BGE, E5) deployed to real users, handling embedding drift and retrieval-quality regression.",
+    "Production experience with vector databases or hybrid search infrastructure: Pinecone, Weaviate, Qdrant, Milvus, FAISS, OpenSearch, Elasticsearch.",
+    "Designed and ran evaluation frameworks for ranking systems: NDCG, MRR, MAP, offline-to-online correlation, A/B test interpretation.",
+    "Built and shipped an end-to-end ranking, search, or recommendation system to real users at meaningful scale.",
+    "Hybrid retrieval and re-ranking: dense vs sparse retrieval, learning-to-rank, LLM-based re-ranking, relevance tuning.",
+    "Applied machine learning at a product company: feature engineering through deployment, owning a model in production.",
+    "Information retrieval and NLP: semantic search, query understanding, text embeddings, retrieval relevance.",
+    "Strong Python engineering with attention to code quality.",
+    "Learning-to-rank models with XGBoost, LightGBM, or neural rankers over click-through and human-judgement labels.",
+    "Scrappy product-engineering: shipping a working ranker fast and iterating from real user feedback, comfortable owning the intelligence/matching layer of a product."
+  ],
+
+  "must_haves": [
+    {"key": "embeddings_retrieval", "label": "Production embeddings-based retrieval", "keywords": ["embedding", "embeddings", "sentence transformer", "sentence-transformers", "bge", "e5", "dense retrieval", "vector search", "semantic search", "openai embeddings"]},
+    {"key": "vector_search_infra", "label": "Vector DB / hybrid search infra", "keywords": ["pinecone", "weaviate", "qdrant", "milvus", "faiss", "opensearch", "elasticsearch", "vector database", "hybrid search", "ann index", "hnsw"]},
+    {"key": "ranking_eval", "label": "Ranking evaluation frameworks", "keywords": ["ndcg", "mrr", "map", "mean average precision", "offline-online", "offline to online", "a/b test", "ab test", "relevance label", "click-through", "ctr", "evaluation framework", "learning to rank", "learning-to-rank"]},
+    {"key": "shipped_ranking_system", "label": "Shipped a ranking/search/recsys system", "keywords": ["ranking", "search", "recommendation", "recommender", "recsys", "retrieval", "relevance", "personalization", "discovery feed", "matching"]},
+    {"key": "strong_python", "label": "Strong Python", "keywords": ["python", "pytorch", "tensorflow", "scikit-learn", "numpy", "pandas"]}
+  ],
+
+  "nice_to_haves": [
+    {"key": "llm_finetuning", "label": "LLM fine-tuning (LoRA/QLoRA/PEFT)", "keywords": ["lora", "qlora", "peft", "fine-tun", "fine tun", "instruction tuning", "rlhf"]},
+    {"key": "ltr_models", "label": "Learning-to-rank models", "keywords": ["xgboost", "lightgbm", "learning to rank", "learning-to-rank", "lambdamart", "ranknet"]},
+    {"key": "hrtech", "label": "HR-tech / recruiting / marketplace", "keywords": ["recruit", "hr-tech", "hrtech", "talent", "marketplace", "two-sided"]},
+    {"key": "distributed_inference", "label": "Distributed systems / large-scale inference", "keywords": ["distributed", "large-scale inference", "low latency", "serving", "throughput", "scale"]},
+    {"key": "open_source", "label": "Open-source contributions", "keywords": ["open source", "open-source", "github", "maintainer", "contributor", "published", "paper", "talk"]}
+  ],
+
+  "role_taxonomy": {
+    "positive_title_terms": [
+      "machine learning", "ml engineer", "ml scientist", "ai engineer", "applied scientist",
+      "applied ml", "data scientist", "research engineer", "nlp", "search engineer",
+      "ranking", "recommendation", "recsys", "deep learning", "software engineer",
+      "backend engineer", "data engineer", "mlops", "platform engineer", "staff engineer",
+      "research scientist", "information retrieval", "relevance engineer", "full stack"
+    ],
+    "strong_positive_title_terms": [
+      "machine learning", "ml engineer", "ai engineer", "applied scientist", "applied ml",
+      "nlp", "search engineer", "ranking", "recommendation", "recsys", "research engineer",
+      "data scientist", "relevance engineer", "information retrieval"
+    ],
+    "negative_title_terms": [
+      "marketing", "hr ", "human resources", "accountant", "accounting", "sales",
+      "operations manager", "graphic", "designer", "civil engineer", "mechanical engineer",
+      "content writer", "customer support", "recruiter", "business analyst",
+      "project manager", "program manager", "qa engineer", "quality assurance",
+      "frontend engineer", "mobile developer", "ui ", "ux "
+    ],
+    "rationale": "role_coherence is the decisive signal against keyword-stuffers. The JD's own example: 'A candidate who has all the AI keywords listed as skills but whose title is Marketing Manager is not a fit, no matter how perfect their skill list looks.' Title alone is noisy, so role_coherence blends taxonomy match of current+historical titles with semantic_fit of the career text."
+  },
+
+  "career_evidence_terms": [
+    "ranking", "learning to rank", "learning-to-rank", "search", "semantic search",
+    "recommendation", "recommender", "recsys", "retrieval", "information retrieval",
+    "relevance", "embedding", "embeddings", "vector", "personalization",
+    "discovery feed", "click-through", "offline-online", "a/b test", "ndcg",
+    "feature engineering", "production", "shipped", "deployed", "at scale", "real users"
+  ],
+
+  "hard_negatives": [
+    {
+      "key": "services_only",
+      "label": "Services/consulting-only career (no product company)",
+      "companies": ["tcs", "tata consultancy", "infosys", "wipro", "accenture", "cognizant", "capgemini", "tech mahindra", "hcl", "mindtree", "ltimindtree", "mphasis", "igate", "syntel", "l&t infotech", "larsen", "dxc", "ibm global services"],
+      "penalty": 0.45,
+      "rule": "Apply when EVERY role's company is a services/consulting firm. JD: 'People who have only worked at consulting firms ... in their entire career.' If currently at one but has prior product-company experience, do NOT penalize (JD says that's fine).",
+      "rationale": "Multiplicative penalty, not a zero — a services-only candidate is a weak fit but not impossible/fraudulent."
+    },
+    {
+      "key": "location_visa",
+      "label": "Outside India and unwilling to relocate (no visa sponsorship)",
+      "penalty": 0.30,
+      "soft_penalty": 0.80,
+      "rule": "country != India AND willing_to_relocate == false -> penalty (0.30). country != India AND willing_to_relocate == true -> soft_penalty (0.80, visa/logistics risk). country == India -> no penalty (JD welcomes Hyderabad/Pune/Mumbai/Delhi-NCR and is flexible within India).",
+      "rationale": "JD: 'Outside India: case-by-case, but we don't sponsor work visas.' A Toronto-based candidate who won't relocate (e.g. CAND_0000001) is effectively unhireable here."
+    },
+    {
+      "key": "research_only",
+      "label": "Pure research, no production deployment",
+      "positive_terms": ["research", "phd", "postdoc", "thesis", "publication", "academic", "professor", "lab", "paper"],
+      "production_terms": ["production", "shipped", "deployed", "real users", "at scale", "serving", "product", "launched", "a/b"],
+      "penalty": 0.55,
+      "rule": "Apply when research signals are strong across the career AND production signals are essentially absent. JD: 'pure research environments ... without any production deployment — we will not move forward.'"
+    },
+    {
+      "key": "cv_speech_only",
+      "label": "CV/speech/robotics primary, no NLP/IR",
+      "domain_terms": ["computer vision", "image classification", "object detection", "speech recognition", "tts", "asr", "robotics", "gans", "image segmentation", "ocr", "pose estimation"],
+      "nlp_ir_terms": ["nlp", "natural language", "information retrieval", "retrieval", "search", "ranking", "embedding", "recommendation", "text", "language model"],
+      "penalty": 0.60,
+      "rule": "Apply when CV/speech/robotics dominate skills/career AND NLP/IR signals are weak/absent. JD: 'primary expertise is computer vision, speech, or robotics without significant NLP/IR exposure ... you'd be re-learning fundamentals here.'"
+    },
+    {
+      "key": "langchain_only_recent",
+      "label": "AI experience only recent LangChain+OpenAI wrappers",
+      "wrapper_terms": ["langchain", "llamaindex", "llama-index", "openai api", "prompt engineering", "chatgpt", "gpt wrapper", "autogen"],
+      "depth_terms": ["embedding", "retrieval", "ranking", "recommendation", "feature engineering", "xgboost", "lightgbm", "model training", "mlops", "information retrieval", "pre-llm", "classical ml"],
+      "penalty": 0.65,
+      "rule": "Apply when AI signals are recent (<= ~18 months) and consist of LangChain/OpenAI-wrapper terms WITHOUT substantial pre-LLM-era ML depth. JD: '\"AI experience\" consists primarily of recent (under 12 months) projects using LangChain to call OpenAI ... unless you can demonstrate substantial pre-LLM-era ML production experience.'"
+    },
+    {
+      "key": "title_chaser",
+      "label": "Title-chaser (job-hops ~every 1.5 yrs for title bumps)",
+      "max_avg_tenure_months": 20,
+      "min_roles": 4,
+      "penalty": 0.80,
+      "rule": "Apply when 4+ roles with average completed tenure < 20 months AND titles escalate (Senior->Staff->Principal pattern). JD: 'optimizing for Senior -> Staff -> Principal titles by switching companies every 1.5 years ... we need someone who plans to be here for 3+ years.' Mild multiplicative penalty."
+    },
+    {
+      "key": "non_technical_role",
+      "label": "Non-engineering current role (keyword-stuffer bait)",
+      "penalty": 0.25,
+      "rule": "Apply when current_title and the whole career trajectory are clearly non-engineering (marketing/HR/accounting/sales/ops/design/civil/mechanical/content/support) regardless of how many AI skills are listed. This is the primary keyword-stuffer trap. Largely overlaps role_coherence; kept as an explicit gate so the reasoning can name it.",
+      "rationale": "Strong penalty (not zero): an Accountant listing 9 AI skills is the canonical trap candidate the sample_submission wrongly ranks #1."
+    }
+  ],
+
+  "behavioral": {
+    "reference_date": "2026-06-06",
+    "active_recent_days": 60,
+    "active_stale_days": 180,
+    "good_response_rate": 0.5,
+    "weak_response_rate": 0.15,
+    "good_interview_completion": 0.6,
+    "notice_preferred_days": 30,
+    "notice_acceptable_days": 90,
+    "modifier_floor": 0.80,
+    "modifier_ceiling": 1.12,
+    "rationale": "Behavioral signals MODIFY (multiplicatively) a fit score; they never drive it. JD: 'a perfect-on-paper candidate who hasn't logged in for 6 months and has a 5% recruiter response rate is, for hiring purposes, not actually available. Down-weight them appropriately.' Reward recent activity, high recruiter_response_rate, open_to_work, verified contact, healthy interview_completion_rate; penalize stale/unreachable. Capped so behavior can lift a weak base only modestly (ceiling 1.12) but can meaningfully sink an unreachable one (floor 0.80). Sentinels (-1 github, -1 offer, empty assessments) are COMMON (>60% of pool) and are treated as neutral, never penalized."
+  },
+
+  "ai_core_skills": [
+    "nlp", "embeddings", "information retrieval", "sentence transformers", "hugging face transformers",
+    "faiss", "pinecone", "milvus", "weaviate", "qdrant", "machine learning", "deep learning",
+    "fine-tuning llms", "lora", "rag", "vector search", "recommendation systems", "learning to rank",
+    "xgboost", "lightgbm", "pytorch", "tensorflow", "scikit-learn", "mlops", "mlflow",
+    "feature engineering", "llms", "transformers", "semantic search", "retrieval", "speech recognition",
+    "image classification", "gans", "tts", "statistical modeling"
+  ],
+  "jd_relevant_skills": [
+    "nlp", "embeddings", "information retrieval", "sentence transformers", "hugging face transformers",
+    "faiss", "pinecone", "milvus", "weaviate", "qdrant", "machine learning", "vector search",
+    "recommendation systems", "learning to rank", "xgboost", "lightgbm", "mlops", "mlflow",
+    "feature engineering", "semantic search", "retrieval", "fine-tuning llms", "rag", "transformers"
+  ],
+  "off_target_skills": [
+    "speech recognition", "tts", "asr", "image classification", "object detection", "gans",
+    "ocr", "robotics", "photoshop", "tailwind", "react", "angular", "javascript", "typescript",
+    "marketing", "seo", "project management"
+  ],
+
+  "component_weights": {
+    "_comment": "Base weighted sum of the five components, tuned on the Claude-authored eval set to maximise NDCG@10. role_coherence + career_evidence dominate because they are what separate true fits from keyword-stuffers.",
+    "semantic_fit": 0.22,
+    "role_coherence": 0.26,
+    "career_evidence": 0.24,
+    "experience_fit": 0.10,
+    "trust_skills": 0.18
+  }
+}
