@@ -121,7 +121,9 @@ def _positive_clause(f: dict, comps: dict, band: str) -> str:
         return f"{lead} — {body}."
     if band == "mid":
         return f"{lead}; {body}."
-    return f"{lead}. {body.capitalize()}."
+    # capitalize only the first letter (preserve proper-noun casing in company/skill names)
+    body_cap = body[0].upper() + body[1:] if body else body
+    return f"{lead}. {body_cap}."
 
 
 def _concern_clause(f: dict, record: dict, band: str) -> str:
@@ -147,7 +149,8 @@ def _concern_clause(f: dict, record: dict, band: str) -> str:
     elif f["relocate"]:
         pos.append("willing to relocate")
     if pos:
-        return " " + ", ".join(pos).capitalize() + "."
+        s = ", ".join(pos)
+        return " " + s[0].upper() + s[1:] + "."
     return ""
 
 
