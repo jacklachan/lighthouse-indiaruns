@@ -1,0 +1,1703 @@
+{
+  "CAND_0008334": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.142,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation",
+      "services-only career"
+    ]
+  },
+  "CAND_0076256": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.121,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0092748": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.288,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0084797": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.139,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0031748": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.1,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0010952": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.168,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0034071": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.28,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0054292": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.136,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0096126": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.228,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0067515": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.103,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0053131": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.291,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0038709": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.094,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0029231": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.097,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0092490": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.105,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0001060": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.36,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0084674": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.264,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0068899": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.167,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0073671": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.383,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0066067": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.395,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0076202": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.097,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0065553": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.35,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0041513": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.064,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0074705": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.185,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0010584": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.095,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0009876": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.136,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0017886": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.273,
+    "caps": [
+      "outside India, no relocation",
+      "cv/speech-only"
+    ]
+  },
+  "CAND_0070216": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.166,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0055369": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.185,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0065345": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.181,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0000926": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.209,
+    "caps": [
+      "outside India, no relocation",
+      "services-only career"
+    ]
+  },
+  "CAND_0053834": {
+    "tier": 0,
+    "archetype": "location_fail",
+    "fit": 0.104,
+    "caps": [
+      "non-technical role",
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0084961": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.252,
+    "caps": [
+      "outside India, no relocation",
+      "services-only career"
+    ]
+  },
+  "CAND_0091099": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.184,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0078401": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.266,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0085371": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.172,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0082459": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.167,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0044006": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.045,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0001179": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.044,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0052343": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.154,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0074517": {
+    "tier": 3,
+    "archetype": "other",
+    "fit": 0.508,
+    "caps": []
+  },
+  "CAND_0021177": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.247,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0040092": {
+    "tier": 2,
+    "archetype": "other",
+    "fit": 0.461,
+    "caps": []
+  },
+  "CAND_0032724": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.194,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0086869": {
+    "tier": 2,
+    "archetype": "other",
+    "fit": 0.457,
+    "caps": []
+  },
+  "CAND_0054967": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.131,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0088358": {
+    "tier": 1,
+    "archetype": "other",
+    "fit": 0.326,
+    "caps": []
+  },
+  "CAND_0020082": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.135,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0083129": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.292,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0027064": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.134,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0069623": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.269,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0051867": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.063,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0097942": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.172,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0083409": {
+    "tier": 2,
+    "archetype": "other",
+    "fit": 0.405,
+    "caps": []
+  },
+  "CAND_0085077": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.364,
+    "caps": [
+      "cv/speech-only"
+    ]
+  },
+  "CAND_0041253": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.15,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0062068": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.158,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0023040": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.119,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0010967": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.183,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0098032": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.135,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0093325": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.102,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0009015": {
+    "tier": 1,
+    "archetype": "other",
+    "fit": 0.324,
+    "caps": []
+  },
+  "CAND_0053835": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.207,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0070067": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.119,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0079866": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.064,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0019065": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.054,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0087136": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.133,
+    "caps": [
+      "non-technical role",
+      "services-only career",
+      "cv/speech-only"
+    ]
+  },
+  "CAND_0062078": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.101,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0017438": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.056,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0076052": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.293,
+    "caps": [
+      "services-only career",
+      "low availability"
+    ]
+  },
+  "CAND_0099882": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.204,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0059698": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.213,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0049256": {
+    "tier": 2,
+    "archetype": "services_only",
+    "fit": 0.345,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0047846": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.327,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0019163": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.158,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0047212": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.289,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0077481": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.172,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0059118": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.255,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0094841": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.087,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)",
+      "services-only career"
+    ]
+  },
+  "CAND_0028239": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.155,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0053904": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.171,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0049406": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.048,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0054114": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.06,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0077788": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.185,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0057945": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.216,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0064491": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.15,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0074480": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.054,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0089627": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.182,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0071274": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.241,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0013092": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.158,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0028807": {
+    "tier": 2,
+    "archetype": "services_only",
+    "fit": 0.409,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0045347": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.111,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0076606": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.19,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0011030": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.223,
+    "caps": [
+      "services-only career",
+      "cv/speech-only"
+    ]
+  },
+  "CAND_0007640": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.052,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0089804": {
+    "tier": 1,
+    "archetype": "services_only",
+    "fit": 0.33,
+    "caps": [
+      "services-only career"
+    ]
+  },
+  "CAND_0050294": {
+    "tier": 0,
+    "archetype": "services_only",
+    "fit": 0.119,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0053004": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.215,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0003688": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.16,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0050662": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.213,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0054566": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.228,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0005976": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.287,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0033864": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.317,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0087843": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.35,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0051779": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.325,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0042673": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.347,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0035423": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.294,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0017254": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.14,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0057746": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.341,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0088308": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.21,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0053870": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.275,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0094752": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.208,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0047655": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.226,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0081113": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.215,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0055937": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.32,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)",
+      "langchain-only-recent"
+    ]
+  },
+  "CAND_0092753": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.264,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0072308": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.266,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0000211": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.348,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0093944": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.286,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0042679": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.208,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0022182": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.248,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0058424": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.222,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0033552": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.396,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0035023": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.265,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0053514": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.195,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0048381": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.233,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0033887": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.213,
+    "caps": [
+      "non-technical role",
+      "services-only career"
+    ]
+  },
+  "CAND_0017382": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.163,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0044821": {
+    "tier": 0,
+    "archetype": "keyword_stuffer",
+    "fit": 0.319,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0078492": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.931,
+    "caps": []
+  },
+  "CAND_0058575": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.932,
+    "caps": []
+  },
+  "CAND_0007874": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.69,
+    "caps": []
+  },
+  "CAND_0044463": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.65,
+    "caps": []
+  },
+  "CAND_0051219": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.767,
+    "caps": []
+  },
+  "CAND_0089552": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.961,
+    "caps": []
+  },
+  "CAND_0039383": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.963,
+    "caps": []
+  },
+  "CAND_0091534": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.776,
+    "caps": []
+  },
+  "CAND_0062247": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.968,
+    "caps": []
+  },
+  "CAND_0004402": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.832,
+    "caps": []
+  },
+  "CAND_0043958": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.801,
+    "caps": []
+  },
+  "CAND_0086657": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.688,
+    "caps": []
+  },
+  "CAND_0018549": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.931,
+    "caps": []
+  },
+  "CAND_0088354": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.721,
+    "caps": []
+  },
+  "CAND_0052706": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.767,
+    "caps": []
+  },
+  "CAND_0005649": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.942,
+    "caps": []
+  },
+  "CAND_0008978": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.833,
+    "caps": []
+  },
+  "CAND_0010257": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.933,
+    "caps": []
+  },
+  "CAND_0093883": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.755,
+    "caps": []
+  },
+  "CAND_0046621": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.773,
+    "caps": []
+  },
+  "CAND_0014440": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.918,
+    "caps": []
+  },
+  "CAND_0094685": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.75,
+    "caps": []
+  },
+  "CAND_0092706": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.863,
+    "caps": []
+  },
+  "CAND_0028793": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.916,
+    "caps": []
+  },
+  "CAND_0085851": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.711,
+    "caps": []
+  },
+  "CAND_0068892": {
+    "tier": 3,
+    "archetype": "ai_engineer",
+    "fit": 0.595,
+    "caps": []
+  },
+  "CAND_0015578": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.875,
+    "caps": []
+  },
+  "CAND_0080344": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.625,
+    "caps": []
+  },
+  "CAND_0091580": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.731,
+    "caps": []
+  },
+  "CAND_0084161": {
+    "tier": 3,
+    "archetype": "ai_engineer",
+    "fit": 0.529,
+    "caps": []
+  },
+  "CAND_0069386": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.68,
+    "caps": []
+  },
+  "CAND_0003575": {
+    "tier": 4,
+    "archetype": "ai_engineer",
+    "fit": 0.678,
+    "caps": []
+  },
+  "CAND_0094403": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.2,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0071576": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.231,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0009558": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.221,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0006229": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.2,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0068068": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.232,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0038600": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.21,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0058852": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.217,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0015071": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.219,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0090850": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.201,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0091129": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.317,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0094389": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.213,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0013361": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.202,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0081534": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.225,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0020593": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.2,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0089488": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.227,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0080573": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.207,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0044879": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.217,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0023805": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.211,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0072936": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.196,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0011713": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.202,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0056556": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.199,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0078693": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.206,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0019291": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.217,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0078286": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.202,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0050826": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.197,
+    "caps": [
+      "non-technical role",
+      "outside India (visa risk)"
+    ]
+  },
+  "CAND_0037821": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.231,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0059303": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.217,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0061799": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.204,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0086890": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.201,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0048407": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.211,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0066785": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.201,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0086407": {
+    "tier": 0,
+    "archetype": "plain_language_strong",
+    "fit": 0.2,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0072379": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0095480": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0042245": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0070429": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0093547": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0061722": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0077239": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0056983": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0065096": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0055685": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0060642": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0007353": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0019480": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0003582": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0033972": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0033817": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0048740": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0040075": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0065710": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0037539": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0055792": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0036839": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0084182": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0046649": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0063888": {
+    "tier": 0,
+    "archetype": "honeypot",
+    "fit": null,
+    "caps": []
+  },
+  "CAND_0041611": {
+    "tier": 2,
+    "archetype": "behaviorally_weak",
+    "fit": 0.94,
+    "caps": [
+      "outside India (visa risk)",
+      "low availability"
+    ]
+  },
+  "CAND_0000001": {
+    "tier": 1,
+    "archetype": "location_fail",
+    "fit": 0.46,
+    "caps": [
+      "outside India, no relocation"
+    ]
+  },
+  "CAND_0000002": {
+    "tier": 0,
+    "archetype": "other",
+    "fit": 0.197,
+    "caps": [
+      "non-technical role"
+    ]
+  },
+  "CAND_0000031": {
+    "tier": 5,
+    "archetype": "ai_engineer",
+    "fit": 0.985,
+    "caps": []
+  }
+}

@@ -63,14 +63,17 @@ def _embeddings_for(raws: List[dict], art: dict, model_name: Optional[str]) -> n
 # ---------------------------------------------------------------------------
 
 def score_all(raws: List[dict], art: dict, drop: str = None,
-              model_name: Optional[str] = None) -> List[dict]:
+              model_name: Optional[str] = None, use_gates: bool = True,
+              use_honeypot: bool = True, use_behavior: bool = True) -> List[dict]:
     rubric = art["rubric"]
     emb = _embeddings_for(raws, art, model_name)
     sem_raw = scoring.raw_semantic_fit(emb, art["facet_emb"])
     sem_norm = scoring.normalize_semantic(sem_raw)
     records = []
     for raw, sf in zip(raws, sem_norm):
-        records.append(scoring.score_candidate(raw, rubric, float(sf), drop=drop))
+        records.append(scoring.score_candidate(
+            raw, rubric, float(sf), drop=drop, use_gates=use_gates,
+            use_honeypot=use_honeypot, use_behavior=use_behavior))
     return records
 
 

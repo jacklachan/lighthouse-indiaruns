@@ -32,4 +32,8 @@ artifacts/*.tmp
 scratch/
 *.log
 submission.csv
+submission_dev.csv
 eval/eda_report.json
+# regenerable dev/eval artifact dirs (the committed one is artifacts/)
+artifacts_dev/
+artifacts_eval/

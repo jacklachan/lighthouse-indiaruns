@@ -140,8 +140,13 @@ def base_score(comps: Dict[str, float], rubric: dict, drop: str = None) -> float
     return s / total_w if total_w else 0.0
 
 
-def score_candidate(raw: dict, rubric: dict, semantic_fit: float, drop: str = None) -> dict:
-    """Full scoring record for one candidate (feeds ranking + reasoning)."""
+def score_candidate(raw: dict, rubric: dict, semantic_fit: float, drop: str = None,
+                    use_gates: bool = True, use_honeypot: bool = True,
+                    use_behavior: bool = True) -> dict:
+    """Full scoring record for one candidate (feeds ranking + reasoning).
+
+    The use_* flags exist for the ablation study in eval/ (e.g. measure NDCG
+    with the gates or honeypot filter switched off)."""
     comps = components(raw, rubric, semantic_fit)
     base = base_score(comps, rubric, drop=drop)
 
@@ -149,10 +154,12 @@ def score_candidate(raw: dict, rubric: dict, semantic_fit: float, drop: str = No
     gate_mult, gate_reasons = gates.apply_gates(raw, rubric)
     beh_mult, beh_facts = behavioral_modifier(raw, rubric)
 
-    if hp:
+    eff_gate = gate_mult if use_gates else 1.0
+    eff_beh = beh_mult if use_behavior else 1.0
+    if hp and use_honeypot:
         final = 0.0
     else:
-        final = base * gate_mult * beh_mult
+        final = base * eff_gate * eff_beh
 
     return {
         "candidate_id": loader.candidate_id(raw),
