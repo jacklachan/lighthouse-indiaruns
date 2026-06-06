@@ -10,9 +10,12 @@ the product of multipliers and the list of fired reasons.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import List, Tuple
 
 from . import features, loader
+
+_MIN_DATE = date(1900, 1, 1)
 
 
 def _career_text(raw: dict) -> str:
@@ -77,11 +80,32 @@ def gate_langchain_only_recent(raw: dict, rubric: dict, text: str) -> Tuple[floa
     return 1.0, ""
 
 
+def _seniority_level(title: str) -> int:
+    t = title.lower()
+    if any(k in t for k in ("principal", "staff", "director", "vp", "head of", "distinguished")):
+        return 3
+    if "lead" in t or "manager" in t:
+        return 2
+    if "senior" in t or "sr." in t or "sr " in t:
+        return 1
+    return 0
+
+
 def gate_title_chaser(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+    """Fire only on genuine title-chasing: short tenures AND an escalating
+    seniority ladder. Lateral moves at short tenure (common for early-career ML
+    engineers, e.g. RecSys -> Search -> NLP) are NOT title-chasing.
+    """
     g = _gate(rubric, "title_chaser")
     stats = features.tenure_stats(raw)
-    if stats["n_roles"] >= g["min_roles"] and 0 < stats["avg_tenure_months"] < g["max_avg_tenure_months"]:
-        return g["penalty"], f"job-hops every ~{stats['avg_tenure_months']:.0f} months across {stats['n_roles']} roles (title-chaser pattern)"
+    if not (stats["n_roles"] >= g["min_roles"] and 0 < stats["avg_tenure_months"] < g["max_avg_tenure_months"]):
+        return 1.0, ""
+    # titles in chronological (oldest-first) order
+    career = sorted(loader.get_career(raw), key=lambda h: (h["start_date"] or _MIN_DATE))
+    levels = [_seniority_level(h["title"]) for h in career]
+    escalated = levels and (max(levels) - min(levels) >= 2) and levels[-1] >= levels[0] and levels[-1] >= 2
+    if escalated:
+        return g["penalty"], f"escalating titles while job-hopping every ~{stats['avg_tenure_months']:.0f} months across {stats['n_roles']} roles (title-chaser pattern)"
     return 1.0, ""
 
 

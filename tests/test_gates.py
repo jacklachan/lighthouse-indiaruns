@@ -77,17 +77,33 @@ def test_services_gate_not_fired_with_prior_product(rubric):
     assert not any("services" in r for r in reasons)
 
 
-def test_title_chaser_gate(rubric):
+def test_title_chaser_gate_fires_on_escalation(rubric):
+    titles = ["ML Engineer", "Senior ML Engineer", "Staff ML Engineer", "Principal ML Engineer"]
     roles = []
-    for i, yr in enumerate([2024, 2022, 2021, 2019]):
+    for i, (yr, t) in enumerate(zip([2019, 2021, 2022, 2024], titles)):
         roles.append({
-            "company": f"Co{i}", "title": "ML Engineer", "start_date": f"{yr}-01-01",
+            "company": f"Co{i}", "title": t, "start_date": f"{yr}-01-01",
             "end_date": f"{yr+1}-02-01", "duration_months": 13, "is_current": False,
             "industry": "Tech", "company_size": "201-500", "description": "ml work",
         })
     c = make_candidate(career_history=roles)
     mult, reasons = gates.apply_gates(c, rubric)
     assert any("title-chaser" in r for r in reasons)
+
+
+def test_title_chaser_not_fired_on_lateral_moves(rubric):
+    # short tenures but lateral titles -> NOT title-chasing
+    titles = ["RecSys Engineer", "Search Engineer", "NLP Engineer", "Applied ML Engineer"]
+    roles = []
+    for i, (yr, t) in enumerate(zip([2019, 2021, 2022, 2024], titles)):
+        roles.append({
+            "company": f"Co{i}", "title": t, "start_date": f"{yr}-01-01",
+            "end_date": f"{yr+1}-02-01", "duration_months": 14, "is_current": False,
+            "industry": "Tech", "company_size": "201-500", "description": "ranking work",
+        })
+    c = make_candidate(career_history=roles)
+    mult, reasons = gates.apply_gates(c, rubric)
+    assert not any("title-chaser" in r for r in reasons)
 
 
 def test_real_toronto_candidate_penalized(rubric, sample_candidates):
