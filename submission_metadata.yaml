@@ -1,0 +1,86 @@
+# Redrob Hackathon — Lighthouse submission metadata
+# Team identity fields marked (FILL) are for the team to complete before upload.
+
+# ============================================================================
+# Team identity
+# ============================================================================
+team_name: "FILL — your registered team name"
+
+primary_contact:
+  name: "FILL — primary contact name"
+  email: "usy.joseph@gmail.com"
+  phone: "FILL — +91-XXXXXXXXXX"
+
+team_members:
+  - name: "FILL — member name"
+    email: "usy.joseph@gmail.com"
+    role: "ML Engineer"
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/jacklachan/lighthouse-indiaruns"
+sandbox_link: "https://huggingface.co/spaces/jacklachan/lighthouse"
+reproduce_command: "python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv"
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "Local Windows 11 desktop"
+  cpu_cores: 16
+  ram_gb: 16
+  python_version: "3.10.11"
+  os: "Windows 11 (10.0.26200)"
+  uses_gpu_for_inference: false          # rank step is CPU-only
+  has_network_during_ranking: false      # no API calls during ranking
+  pre_computation_required: true         # embeddings + BM25 + JD rubric + eval labels
+  pre_computation_time_minutes: 130      # one-time bge-small encode of 100K on CPU
+
+# ============================================================================
+# AI tools declaration  (transparency only — not penalized)
+# ============================================================================
+ai_tools_used:
+  - "Claude"
+
+ai_usage_summary: |
+  Claude (Anthropic) was used OFFLINE for two product steps and as a coding
+  assistant: (1) parsing the job description into the structured, committed
+  rubric artifacts/jd_rubric.json, and (2) authoring the stratified eval
+  relevance labels in eval/eval_labels.json. Both are static files read at
+  rank-time WITHOUT any API call. No candidate data was sent to any hosted LLM
+  during ranking — the rank step (rank.py) is deterministic numpy/pandas over
+  precomputed local artifacts. Claude was also used as a pair-programming
+  assistant while writing and testing the code in this repository.
+
+# ============================================================================
+# Approach summary (<=200 words)
+# ============================================================================
+methodology_summary: |
+  Lighthouse is an offline-LLM-augmented hybrid ranker. Offline (no time limit):
+  Claude parses the JD into a structured rubric; candidates are embedded with
+  BAAI/bge-small-en-v1.5 (float16) and indexed with BM25; Claude labels a
+  stratified eval set. Rank-time (CPU, no network, <5 min): each candidate gets
+  five explainable scores in [0,1] — semantic_fit (cosine vs 10 JD facets),
+  role_coherence (title taxonomy + semantics), career_evidence (built
+  ranking/search/recsys at product companies), experience_fit (soft 6–8-yr
+  curve) and trust_skills (proficiency×duration×endorsements×assessment). A tuned
+  weighted base is multiplied by JD-derived hard-negative gates (services-only,
+  location/visa, research-only, CV/speech-only, LangChain-only, title-chaser,
+  non-technical role) and a behavioral availability modifier; honeypots are
+  zeroed by an explainable anomaly detector. We sort with the spec tie-break and
+  emit a fact-grounded, no-hallucination reason per candidate. The decisive
+  anti-trap signals are role_coherence and career_evidence — they surface
+  plain-language strong candidates and sink keyword-stuffers. Against a keyword
+  baseline on Claude-authored proxy labels, composite 0.998 vs 0.553; 0 honeypots
+  in the top-100.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true

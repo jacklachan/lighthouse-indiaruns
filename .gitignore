@@ -37,3 +37,6 @@ eval/eda_report.json
 # regenerable dev/eval artifact dirs (the committed one is artifacts/)
 artifacts_dev/
 artifacts_eval/
+
+# deck preview scratch
+deck/_preview/
