@@ -4,17 +4,20 @@
 # ============================================================================
 # Team identity
 # ============================================================================
-team_name: "FILL — your registered team name"
+team_name: "UM"
 
 primary_contact:
-  name: "FILL — primary contact name"
-  email: "usy.joseph@gmail.com"
-  phone: "FILL — +91-XXXXXXXXXX"
+  name: "L Mohit Jain"
+  email: "mohitlalith07@gmail.com"
+  phone: "+91-8660556007"
 
 team_members:
-  - name: "FILL — member name"
+  - name: "L Mohit Jain"
+    email: "mohitlalith07@gmail.com"
+    phone: "+91-8660556007"
+  - name: "Utkarsh Singh Yadav"
     email: "usy.joseph@gmail.com"
-    role: "ML Engineer"
+    phone: "+91-9901813392"
 
 # ============================================================================
 # Code and reproducibility
