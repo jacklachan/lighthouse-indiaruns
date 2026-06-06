@@ -7,5 +7,7 @@
   "max_seq": 256,
   "built_at": "2026-06-06T18:56:26",
   "elapsed_sec": 4148.6,
-  "emb_dtype": "float16"
+  "emb_dtype": "float16",
+  "semantic_p5": 0.5745536088943481,
+  "semantic_p95": 0.6435830593109131
 }

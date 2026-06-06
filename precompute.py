@@ -121,6 +121,11 @@ def main():
     facet_text = [BGE_QUERY_PREFIX + f for f in facets] if "bge" in args.model.lower() else facets
     facet_emb = model.encode(facet_text, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32)
 
+    # population semantic-fit bounds (p5/p95) — let rank-time scale stably for any N
+    from lighthouse import scoring as _sc
+    sem_raw = _sc.raw_semantic_fit(emb, facet_emb)
+    sem_p5, sem_p95 = float(np.percentile(sem_raw, 5)), float(np.percentile(sem_raw, 95))
+
     # ---- 3. SAVE CRITICAL ARTIFACTS NOW (before the optional, riskier BM25) ----
     log("[3/4] Saving embeddings + ids + facets + meta ...")
     json.dump(ids, open(os.path.join(out, "candidate_ids.json"), "w"))
@@ -131,6 +136,7 @@ def main():
         "n_facets": len(facets), "seed": SEED, "max_seq": args.max_seq,
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "elapsed_sec": round(time.time() - t0, 1), "emb_dtype": "float16",
+        "semantic_p5": sem_p5, "semantic_p95": sem_p95,
     }
     json.dump(meta, open(os.path.join(out, "precompute_meta.json"), "w"), indent=2)
     log(f"      saved cand_emb {emb16.shape} ({emb16.nbytes/1e6:.1f} MB)")

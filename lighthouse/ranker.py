@@ -26,8 +26,15 @@ def load_artifacts(art_dir: str) -> dict:
     cand_emb = np.load(os.path.join(art_dir, "cand_emb.npy"))
     facet_emb = np.load(os.path.join(art_dir, "jd_facet_emb.npy"))
     id_to_row = {cid: i for i, cid in enumerate(ids)}
+    # fixed population semantic bounds (p5/p95) so small batches score stably
+    sem_lo = sem_hi = None
+    meta_path = os.path.join(art_dir, "precompute_meta.json")
+    if os.path.exists(meta_path):
+        meta = json.load(open(meta_path, encoding="utf-8"))
+        sem_lo, sem_hi = meta.get("semantic_p5"), meta.get("semantic_p95")
     return {"rubric": rubric, "ids": ids, "cand_emb": cand_emb,
-            "facet_emb": facet_emb, "id_to_row": id_to_row}
+            "facet_emb": facet_emb, "id_to_row": id_to_row,
+            "sem_lo": sem_lo, "sem_hi": sem_hi}
 
 
 def _embeddings_for(raws: List[dict], art: dict, model_name: Optional[str]) -> np.ndarray:
@@ -68,7 +75,7 @@ def score_all(raws: List[dict], art: dict, drop: str = None,
     rubric = art["rubric"]
     emb = _embeddings_for(raws, art, model_name)
     sem_raw = scoring.raw_semantic_fit(emb, art["facet_emb"])
-    sem_norm = scoring.normalize_semantic(sem_raw)
+    sem_norm = scoring.normalize_semantic(sem_raw, art.get("sem_lo"), art.get("sem_hi"))
     records = []
     for raw, sf in zip(raws, sem_norm):
         records.append(scoring.score_candidate(

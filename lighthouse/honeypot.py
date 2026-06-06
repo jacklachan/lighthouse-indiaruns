@@ -74,11 +74,15 @@ def detect(raw: dict) -> Tuple[bool, List[str]]:
         reasons.append(
             f"career roles sum to {total_role_months}mo, impossible for {yoe:.1f} yrs experience")
 
-    # --- 6. tenure longer than a young company could exist (proxy) ---
-    # A single role of >15 yrs is implausible in this pool's company ages.
+    # --- 6. grossly impossible single-role tenure (dormant backstop) ---
+    # EDA: the pool's longest legitimate single-role tenure is 228 months (19 yrs),
+    # so a long tenure on its own is NOT evidence of fraud — we must not clip real
+    # senior veterans. We only flag values BEYOND any plausible career (>300mo /
+    # 25 yrs), which nothing in this pool hits; the genuinely impossible profiles
+    # are caught by the date-integrity and tenure-vs-experience rules above.
     for h in career:
-        if h["duration_months"] > 200:
-            reasons.append(f"implausible {h['duration_months']}mo tenure at {h['company']}")
+        if h["duration_months"] > 300:
+            reasons.append(f"impossible {h['duration_months']}mo (> 25 yr) tenure at {h['company']}")
             break
 
     # --- 7. education dates invalid ---

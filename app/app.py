@@ -32,14 +32,22 @@ st.set_page_config(page_title="Lighthouse — Candidate Ranker", page_icon="🔦
 def _facets_and_rubric():
     rubric = json.load(open(os.path.join(ART, "jd_rubric.json"), encoding="utf-8"))
     facet_emb = np.load(os.path.join(ART, "jd_facet_emb.npy"))
-    return rubric, facet_emb
+    # fixed population semantic bounds -> stable scores regardless of upload size
+    sem_lo = sem_hi = None
+    meta_path = os.path.join(ART, "precompute_meta.json")
+    if os.path.exists(meta_path):
+        meta = json.load(open(meta_path, encoding="utf-8"))
+        sem_lo, sem_hi = meta.get("semantic_p5"), meta.get("semantic_p95")
+    return rubric, facet_emb, sem_lo, sem_hi
 
 
-def _build_art(rubric, facet_emb):
-    """Empty precomputed set -> every candidate is encoded on the fly."""
+def _build_art(rubric, facet_emb, sem_lo=None, sem_hi=None):
+    """Empty precomputed set -> every candidate is encoded on the fly.
+    Carries the fixed population semantic bounds so small uploads score stably."""
     dim = facet_emb.shape[1]
     return {"rubric": rubric, "ids": [], "id_to_row": {},
-            "cand_emb": np.zeros((0, dim), dtype=np.float32), "facet_emb": facet_emb}
+            "cand_emb": np.zeros((0, dim), dtype=np.float32), "facet_emb": facet_emb,
+            "sem_lo": sem_lo, "sem_hi": sem_hi}
 
 
 def _parse_jsonl(text: str):
@@ -68,7 +76,7 @@ with st.sidebar:
     st.markdown("Ranking runs on **CPU, no hosted LLM**. The five-component score is gated by "
                 "JD hard-negatives and a behavioral modifier; honeypots are zeroed.")
 
-rubric, facet_emb = _facets_and_rubric()
+rubric, facet_emb, sem_lo, sem_hi = _facets_and_rubric()
 
 raws = []
 if mode.startswith("Preloaded"):
@@ -87,7 +95,7 @@ raws = raws[:100]
 
 if raws and st.button("🔦 Rank candidates", type="primary"):
     with st.spinner(f"Encoding + scoring {len(raws)} candidates on CPU ..."):
-        art = _build_art(rubric, facet_emb)
+        art = _build_art(rubric, facet_emb, sem_lo, sem_hi)
         records = ranker.score_all(raws, art)
         mx = max((r["final_score"] for r in records), default=0.0)
         if mx > 0:

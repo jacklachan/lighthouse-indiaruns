@@ -44,12 +44,21 @@ def raw_semantic_fit(cand_emb: np.ndarray, facet_emb: np.ndarray) -> np.ndarray:
     return 0.6 * cos.max(axis=1) + 0.4 * cos.mean(axis=1)
 
 
-def normalize_semantic(raw: np.ndarray) -> np.ndarray:
-    """Percentile-clip raw semantic fit into [0,1] across the population."""
+def normalize_semantic(raw: np.ndarray, lo: float = None, hi: float = None) -> np.ndarray:
+    """Affine-clip raw semantic fit into [0,1].
+
+    Prefer FIXED population bounds (`lo`/`hi` = p5/p95 of the full 100K, stored in
+    artifacts/precompute_meta.json) so a candidate's score does NOT depend on the
+    batch it was scored with — essential for the small-N sandbox where in-batch
+    percentiles are unstable. Falls back to in-batch percentiles only when no
+    bounds are supplied. For the full 100K run the stored bounds equal the
+    in-batch percentiles, so the official ranking is unchanged.
+    """
     if len(raw) == 0:
         return raw
-    lo = np.percentile(raw, 5)
-    hi = np.percentile(raw, 95)
+    if lo is None or hi is None:
+        lo = float(np.percentile(raw, 5))
+        hi = float(np.percentile(raw, 95))
     if hi - lo < 1e-6:
         return np.clip((raw - raw.min()) / (raw.ptp() + 1e-6), 0, 1)
     return np.clip((raw - lo) / (hi - lo), 0.0, 1.0)
