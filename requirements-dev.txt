@@ -14,3 +14,7 @@ mypy==1.13.0
 # type stubs so mypy can check pandas / yaml usage without bundling runtime libs
 pandas-stubs==2.2.3.241126
 types-PyYAML==6.0.12.20240917
+
+# sandbox-server smoke test (FastAPI TestClient). App-only — not a rank-time dep.
+fastapi==0.115.6
+httpx==0.28.1

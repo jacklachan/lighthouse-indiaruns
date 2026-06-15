@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lighthouse — recruiter-grade candidate ranker</title>
+  <meta name="description" content="Lighthouse ranks the right candidates out of 100,000 by reasoning about the gap between what a JD says and what it means — not by counting keywords." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A6%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <div class="bg-layer"></div>
+  <div class="bg-grain"></div>
+
+  <!-- ---------- nav ---------- -->
+  <nav>
+    <div class="wrap nav-inner">
+      <div class="brand"><span class="dot"></span> LIGHTHOUSE</div>
+      <div class="nav-links">
+        <a href="#approach">Approach</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#tool">Try it</a>
+        <a href="https://github.com/jacklachan/lighthouse-indiaruns" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ---------- hero ---------- -->
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <span class="badge-pill"><span class="blip"></span> Redrob · India Runs — Track 1 · Candidate Discovery &amp; Ranking</span>
+        <h1>Keyword filters surface the <span class="accent">loudest</span> profiles.<br />Lighthouse surfaces the <span class="accent">right</span> ones.</h1>
+        <p class="lead">A reasoning-first ranker that finds the best 100 of 100,000 candidates for a nuanced Senior AI Engineer role — and ignores the keyword-stuffers, behavioral twins, and ~80 honeypots built to fool keyword search.</p>
+        <div class="hero-cta">
+          <a href="#tool" class="btn btn-primary">Rank candidates →</a>
+          <a href="https://github.com/jacklachan/lighthouse-indiaruns" target="_blank" rel="noopener" class="btn btn-ghost">View the code</a>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="num" data-count="100000" data-suffix="">0</div><div class="lbl">candidate pool</div></div>
+          <div class="stat"><div class="num" data-count="0" data-prefix="" data-zero="0">0</div><div class="lbl">honeypots in top-100</div></div>
+          <div class="stat"><div class="num" data-count="5" data-suffix="">0</div><div class="lbl">explainable components</div></div>
+        </div>
+      </div>
+
+      <!-- lighthouse beam visual -->
+      <div class="beacon">
+        <svg viewBox="0 0 240 240" aria-hidden="true">
+          <defs>
+            <radialGradient id="cone" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(246,181,61,0.55)" />
+              <stop offset="55%" stop-color="rgba(246,181,61,0.10)" />
+              <stop offset="100%" stop-color="rgba(246,181,61,0)" />
+            </radialGradient>
+            <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="rgba(111,123,255,0.5)" />
+              <stop offset="100%" stop-color="rgba(246,181,61,0.5)" />
+            </linearGradient>
+          </defs>
+          <!-- concentric guide rings -->
+          <circle class="beacon-ring" cx="120" cy="120" r="108" stroke="url(#ring)" stroke-opacity="0.25" />
+          <circle class="beacon-ring" cx="120" cy="120" r="78" />
+          <circle class="beacon-ring" cx="120" cy="120" r="48" />
+          <!-- sweeping beam cone -->
+          <g class="beam-cone">
+            <path d="M120 120 L240 70 A130 130 0 0 1 240 170 Z" fill="url(#cone)" />
+          </g>
+          <!-- candidate dots -->
+          <g id="dots"></g>
+          <!-- core -->
+          <circle class="beacon-core" cx="120" cy="120" r="9" fill="#f6b53d" />
+          <circle cx="120" cy="120" r="17" fill="none" stroke="rgba(246,181,61,0.5)" />
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------- approach / the traps ---------- -->
+  <section id="approach">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="eyebrow">The problem</div>
+        <h2 class="section-title">The dataset is built to fool keyword search.</h2>
+        <p class="section-sub">Four kinds of trap sit in the pool. Lighthouse reasons about the gap between what the JD <em>says</em> and what it <em>means</em>, so each one is handled for the right reason.</p>
+      </div>
+      <div class="grid-4">
+        <div class="card reveal">
+          <div class="icon">🔊</div>
+          <h3>Keyword-stuffers</h3>
+          <p>Profiles that name-drop every term in the JD without the trajectory to back it up.</p>
+          <span class="tag">→ role coherence + career evidence</span>
+        </div>
+        <div class="card reveal">
+          <div class="icon">👯</div>
+          <h3>Behavioral twins</h3>
+          <p>Near-identical on paper; separated by a behavioral modifier reading real signals.</p>
+          <span class="tag">→ behavioral modifier</span>
+        </div>
+        <div class="card reveal">
+          <div class="icon">🪤</div>
+          <h3>~80 honeypots</h3>
+          <p>Subtly impossible histories — tenure longer than the company has existed.</p>
+          <span class="tag">→ explainable honeypot filter</span>
+        </div>
+        <div class="card reveal">
+          <div class="icon">💬</div>
+          <h3>Plain-language fits</h3>
+          <p>Strong candidates who simply don't speak in keywords — still surfaced.</p>
+          <span class="tag">→ semantic fit</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- pipeline ---------- -->
+  <section id="pipeline">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="eyebrow">How it scores</div>
+        <h2 class="section-title">Five components, gated and grounded.</h2>
+        <p class="section-sub">Every candidate is scored on five explainable components, combined with the JD-derived weights, multiplied by hard-negative gates and a behavioral modifier, with honeypots zeroed — then explained.</p>
+      </div>
+      <div class="pipe">
+        <div class="pipe-node reveal"><div class="step">01</div><h4>Semantic fit</h4><p>Embedding similarity to the JD's facets.</p></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node reveal"><div class="step">02</div><h4>Role coherence</h4><p>Does the trajectory actually fit the role?</p></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node reveal"><div class="step">03</div><h4>Career + experience</h4><p>Evidence and depth, not claims.</p></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node reveal"><div class="step">04</div><h4>Gates · honeypot</h4><p>Hard-negatives multiply down; fakes go to zero.</p></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node reveal"><div class="step">05</div><h4>Reasoning</h4><p>A grounded explanation per candidate.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- the tool ---------- -->
+  <section id="tool">
+    <div class="wrap">
+      <div class="reveal" style="margin-bottom:34px">
+        <div class="eyebrow">Try it live</div>
+        <h2 class="section-title">Rank a batch of candidates.</h2>
+        <p class="section-sub">Use the preloaded 100-candidate sample or upload your own JSONL (≤100). The <code>bge-small</code> encoder runs at request time on CPU — a few seconds — then the full ranker scores, gates, and explains every row.</p>
+      </div>
+
+      <div class="tool-card reveal">
+        <div class="segmented" id="mode">
+          <button data-mode="sample" class="active">Preloaded sample (100)</button>
+          <button data-mode="upload">Upload JSONL (≤100)</button>
+        </div>
+
+        <div id="upload-pane" style="display:none">
+          <div class="dropzone" id="dropzone">
+            <div>📄 <strong>Drop a JSONL file</strong> or click to browse</div>
+            <div class="hint">One candidate JSON object per line · up to 100 rows</div>
+            <div class="file-name" id="file-name"></div>
+          </div>
+          <input type="file" id="file-input" accept=".jsonl,.json,.txt" hidden />
+        </div>
+
+        <div class="tool-actions">
+          <button class="btn btn-primary" id="rank-btn">🔦 Rank candidates</button>
+          <span class="note" id="src-note">Scoring the preloaded sample of 100 candidates.</span>
+        </div>
+
+        <div class="error-banner" id="error"></div>
+
+        <div class="loading" id="loading">
+          <div class="scanner"></div>
+          <div class="lt" id="loading-text">Encoding candidates &amp; sweeping the beam…</div>
+        </div>
+
+        <div class="results" id="results">
+          <div class="metrics">
+            <div class="metric"><div class="v" data-metric="ranked">0</div><div class="k">candidates ranked</div></div>
+            <div class="metric"><div class="v indigo" data-metric="honeypots">0</div><div class="k">honeypots flagged</div></div>
+            <div class="metric"><div class="v amber" data-metric="top">—</div><div class="k">top score</div></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:64px">Rank</th>
+                  <th>Candidate</th>
+                  <th>Title / country</th>
+                  <th style="width:70px">Yrs</th>
+                  <th>Why this rank</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+
+          <details class="breakdown" id="breakdown">
+            <summary><span>🔬 Top candidate — component breakdown</span><span class="chev">▾</span></summary>
+            <div class="breakdown-body" id="breakdown-body"></div>
+          </details>
+
+          <div class="tool-actions" style="margin-top:22px">
+            <button class="btn btn-ghost" id="download-btn">⬇️ Download ranking CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- footer ---------- -->
+  <footer>
+    <div class="wrap footer-inner">
+      <div>🔦 <strong>Lighthouse</strong> — reasoning-first candidate ranker · Redrob India Runs, Track 1</div>
+      <div>
+        <a href="https://github.com/jacklachan/lighthouse-indiaruns" target="_blank" rel="noopener">GitHub</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/jacklachan/lighthouse-indiaruns/blob/main/eval/results.md" target="_blank" rel="noopener">Results</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/vendor/anime.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

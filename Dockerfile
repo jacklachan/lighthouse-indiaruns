@@ -1,18 +1,18 @@
-# Lighthouse — self-contained sandbox image (also used by the HuggingFace Docker Space).
-# Runs the Streamlit demo on CPU. For the full 100K rank, use rank.py (see README).
+# Lighthouse — self-contained sandbox image (HuggingFace Docker Space).
+# Serves the FastAPI app + animated frontend on CPU. For the full 100K rank, use rank.py.
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# CPU-only torch first (kept out of the CUDA default to keep the image small)
+# CPU-only torch first (from the PyTorch CPU wheel index).
 RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# App/runtime deps: the FastAPI server plus the small encoder used at request time.
+COPY app/requirements.txt ./app/requirements.txt
+RUN pip install --no-cache-dir -r app/requirements.txt
 
 COPY . .
 
-# HuggingFace Spaces expects the app on 7860
 ENV PORT=7860
 EXPOSE 7860
-CMD ["streamlit", "run", "app/app.py", "--server.port=7860", "--server.address=0.0.0.0"]
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "7860"]

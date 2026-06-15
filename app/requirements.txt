@@ -1,5 +1,8 @@
-# HuggingFace Space (Streamlit) dependencies for the Lighthouse sandbox.
-streamlit==1.40.2
+# HuggingFace Space (FastAPI) dependencies for the Lighthouse sandbox.
+# The rank-time runtime (numpy/pandas/pyyaml) is frozen in the repo-root requirements.txt;
+# these are the demo-server deps and run OUTSIDE the official rank budget.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
 sentence-transformers==3.3.1
 torch==2.5.1
 numpy==2.2.6

@@ -134,7 +134,7 @@ Every gate above runs in CI on each push/PR to `main` (`.github/workflows/ci.yml
 | `artifacts/` | committed precomputed files (`jd_rubric.json`, float16 embeddings as plain `.npy` — no git-lfs) |
 | `eval/` | Claude-authored labels, metrics, `results.md` (NDCG/MAP/P@10, ablation, baseline) |
 | `tests/` | pytest: honeypot detection, monotonicity, tie-break, reasoning grounding, CSV validity |
-| `app/` | HuggingFace Spaces Streamlit sandbox |
+| `app/` | HuggingFace Spaces sandbox — FastAPI + animated frontend (`server.py`, `web/`) wrapping the ranker |
 | `deck/` | idea-submission deck → PDF |
 
 ## Compute environment

@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is loosely b
 ## [Unreleased]
 
 ### Added
+- New sandbox UI: a custom dark/premium/animated frontend (`app/web/` — vanilla
+  HTML/CSS/JS + vendored anime.js) served by a small FastAPI app (`app/server.py`) that
+  wraps the unchanged `lighthouse/` ranker. Hero + story + pipeline sections and a full
+  ranker tool (sample/upload → ranked table with grounded reasoning → top-candidate
+  component breakdown → CSV download). JSON API: `/api/sample`, `/api/rank`, `/api/health`.
+- FastAPI `TestClient` smoke tests (`tests/test_server.py`): static/index, health,
+  sample, and input-validation (empty/invalid JSONL → 400). The encoder happy path is
+  verified locally (needs `sentence-transformers` + a model download), not in CI.
 - Continuous integration (`.github/workflows/ci.yml`): runs the test suite and the
   submission-format validator on every push and pull request to `main`.
 - Project packaging and tool configuration (`pyproject.toml`): project metadata, optional
