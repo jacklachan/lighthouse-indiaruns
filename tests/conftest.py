@@ -21,8 +21,14 @@ def rubric():
 
 @pytest.fixture(scope="session")
 def sample_candidates():
-    path = os.path.join(BUNDLE, "sample_candidates.json")
-    if not os.path.exists(path):
+    # Prefer the committed test fixture so the suite is fully reproducible in CI;
+    # fall back to the published challenge bundle for local runs that still have it.
+    search = [
+        os.path.join(ROOT, "tests", "fixtures", "sample_candidates.json"),
+        os.path.join(BUNDLE, "sample_candidates.json"),
+    ]
+    path = next((p for p in search if os.path.exists(p)), None)
+    if path is None:
         pytest.skip("sample_candidates.json not present")
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
