@@ -1,0 +1,104 @@
+# =====================================================================
+# Lighthouse — project metadata & tool configuration
+# ---------------------------------------------------------------------
+# The rank-time runtime depends ONLY on numpy / pandas / pyyaml. The heavy
+# precompute / app / deck stacks are declared as optional extras so the
+# default install stays minimal (the CPU-only, no-network rank budget).
+# =====================================================================
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lighthouse-indiaruns"
+version = "0.1.0"
+description = "Reasoning-first, trap-resistant candidate ranker (Redrob / India Runs Track 1)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "L Mohit Jain" },
+    { name = "Utkarsh Singh Yadav" },
+]
+keywords = ["ranking", "information-retrieval", "ndcg", "recruiting", "hackathon"]
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Rank-time runtime only — this is genuinely all rank.py needs.
+dependencies = [
+    "numpy==2.2.6",
+    "pandas==2.3.3",
+    "PyYAML==6.0.2",
+]
+
+[project.optional-dependencies]
+# Offline embedding build (network OK, outside the 5-min rank budget).
+precompute = [
+    "sentence-transformers==3.3.1",
+    "torch==2.5.1",
+    "rank-bm25==0.2.2",
+]
+app = ["streamlit==1.40.2"]
+deck = ["python-pptx==1.0.2"]
+dev = [
+    "pytest==8.3.4",
+    "pytest-cov==6.0.0",
+    "ruff==0.8.4",
+    "black==24.10.0",
+    "mypy==1.13.0",
+    "pandas-stubs==2.2.3.241126",
+    "types-PyYAML==6.0.12.20240917",
+]
+
+[project.urls]
+Repository = "https://github.com/jacklachan/lighthouse-indiaruns"
+
+[tool.setuptools]
+packages = ["lighthouse"]
+
+# --------------------------------------------------------------------- #
+# Lint / format
+# --------------------------------------------------------------------- #
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["artifacts", "deck", "data"]
+
+[tool.ruff.lint]
+# pyflakes(F), pycodestyle(E,W), isort(I), pyupgrade(UP), bugbear(B), comprehensions(C4)
+select = ["E", "W", "F", "I", "UP", "B", "C4"]
+ignore = ["E501"]  # line length is enforced by black, not the linter
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+extend-exclude = "(artifacts|deck|data)"
+
+# --------------------------------------------------------------------- #
+# Type checking — the rank-time package only (precompute uses torch et al.)
+# --------------------------------------------------------------------- #
+[tool.mypy]
+python_version = "3.10"
+files = ["lighthouse"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# --------------------------------------------------------------------- #
+# Tests / coverage
+# --------------------------------------------------------------------- #
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["lighthouse"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
