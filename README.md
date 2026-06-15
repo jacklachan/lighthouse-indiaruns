@@ -17,6 +17,24 @@ keywords.
 
 ---
 
+## How this maps to the brief
+
+A fast index from each thing the challenge evaluates to where this repo satisfies it.
+
+| What the challenge evaluates | Where Lighthouse delivers it |
+| --- | --- |
+| Top-100 ranking from the 100K pool | `rank.py` → `submission.csv` (4 columns, validator-clean) |
+| Honeypot avoidance (>10% in top-100 = DQ) | `lighthouse/honeypot.py` explainable filter — **0 honeypots** in the top-100, audited over the full 100K (`eval/results.md` §1) |
+| Resisting keyword-stuffers & non-fits | `role_coherence` + `career_evidence` + JD-derived gates (`lighthouse/scoring.py`, `lighthouse/gates.py`); trap-resistance table in `eval/results.md` §1 |
+| Ranking quality (NDCG@10/50, MAP, P@10) | `lighthouse/metrics.py`; composite **0.998 vs 0.553** baseline (`eval/results.md` §2) |
+| Grounded, explainable reasoning | `lighthouse/reasoning.py` — every claim grounded in the profile; `tests/test_reasoning.py` |
+| CPU-only, no-network, < 5 min rank | `rank.py` imports only numpy/pandas/pyyaml (`requirements.txt`); declared in `submission_metadata.yaml` |
+| Reproducibility & determinism | seeded (`SEED = 1729`), committed artifacts, `precompute.py`, and CI |
+| Evaluation rigor (no circularity) | self-labeled **and** a blind independent-label harness (`eval/blind_compare.py`) |
+| Code quality & testing | 52 tests + ruff/black/mypy + an 85% coverage floor, all enforced in CI (`.github/workflows/ci.yml`) |
+
+---
+
 ## Reproduce the submission
 
 ```bash
@@ -93,12 +111,18 @@ python eval/evaluate.py --candidates ./data/candidates.jsonl       # -> eval/res
 python scripts/make_blind_eval.py && python eval/blind_compare.py  # independent human check
 ```
 
-## Tests
+## Tests & quality gates
 
 ```bash
-pytest -q     # 36 tests: honeypot detection, gates, scoring/monotonicity, tie-break,
-              # reasoning grounding (no hallucination), metrics, CSV validity
+pytest -q                        # 52 tests: honeypot detection, gates, scoring + the
+                                 # normalize_semantic regression, loader robustness,
+                                 # reasoning grounding, metrics, tie-break, CSV validity
+pytest -q --cov=lighthouse       # 86% coverage on the rank-time package (CI floor: 85%)
+ruff check . && black --check .  # lint + format
+mypy lighthouse                  # static type check
 ```
+
+Every gate above runs in CI on each push/PR to `main` (`.github/workflows/ci.yml`).
 
 ## Repo layout
 
@@ -107,7 +131,7 @@ pytest -q     # 36 tests: honeypot detection, gates, scoring/monotonicity, tie-b
 | `lighthouse/` | core package: `loader`, `features`, `scoring`, `gates`, `honeypot`, `reasoning`, `metrics` |
 | `precompute.py` | builds all artifacts |
 | `rank.py` | the single reproduce command |
-| `artifacts/` | committed precomputed files (`jd_rubric.json`, embeddings via git-lfs) |
+| `artifacts/` | committed precomputed files (`jd_rubric.json`, float16 embeddings as plain `.npy` — no git-lfs) |
 | `eval/` | Claude-authored labels, metrics, `results.md` (NDCG/MAP/P@10, ablation, baseline) |
 | `tests/` | pytest: honeypot detection, monotonicity, tie-break, reasoning grounding, CSV validity |
 | `app/` | HuggingFace Spaces Streamlit sandbox |

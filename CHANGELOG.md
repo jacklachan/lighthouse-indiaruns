@@ -24,6 +24,13 @@ All notable changes to this project are documented here. The format is loosely b
   rank-time package rose from 78% to 86% (loader 53%→90%, scoring 79%→90%, metrics 100%).
 - Vendored the 50-candidate published sample to `tests/fixtures/sample_candidates.json`
   so the full suite runs in CI without the untracked challenge bundle.
+- README "How this maps to the brief" table — a rubric-to-repo index pointing each
+  evaluated dimension at the file/evidence that satisfies it; refreshed the Tests
+  section to cover the full gate (ruff/black/mypy/coverage) and 52 tests.
+
+### Changed
+- README: corrected the artifacts row (float16 `.npy`, no git-lfs) to match the
+  reproduce note; both now agree the embeddings ship as a plain committed file.
 
 ### Fixed
 - `normalize_semantic` used the `ndarray.ptp()` method, which NumPy 2.0 removed (the repo
