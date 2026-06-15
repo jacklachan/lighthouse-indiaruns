@@ -1,4 +1,5 @@
 """Reasoning generator: grounding (no hallucination), variation, rank-consistency."""
+
 import re
 
 from lighthouse import loader, reasoning, scoring
@@ -14,16 +15,28 @@ def _record(raw, rubric, rank, semantic=0.6):
 # JD role-mandate words the generator may reference (as requirements, not as
 # claimed candidate skills) even when the candidate lacks them.
 JD_MANDATE_WORDS = {
-    "retrieval", "ranking", "search", "embeddings", "recommendation",
-    "semantic search", "information retrieval", "learning to rank",
-    "vector search", "relevance", "personalization",
+    "retrieval",
+    "ranking",
+    "search",
+    "embeddings",
+    "recommendation",
+    "semantic search",
+    "information retrieval",
+    "learning to rank",
+    "vector search",
+    "relevance",
+    "personalization",
 }
 
 
 def _profile_text(raw):
     p = loader.get_profile(raw)
-    parts = [loader._s(p, "headline"), loader._s(p, "summary"),
-             loader._s(p, "current_title"), loader._s(p, "current_company")]
+    parts = [
+        loader._s(p, "headline"),
+        loader._s(p, "summary"),
+        loader._s(p, "current_title"),
+        loader._s(p, "current_company"),
+    ]
     for h in loader.get_career(raw):
         parts += [h["title"], h["company"], h["description"]]
     parts += [s["name"] for s in loader.get_skills(raw)]
@@ -41,8 +54,7 @@ def test_no_skill_hallucination(rubric, sample_candidates):
         text = reasoning.generate(raw, rubric, rec).lower()
         for skill in vocab:
             if re.search(r"\b" + re.escape(skill) + r"\b", text):
-                assert skill in ptext, \
-                    f"{cid}: reasoning names '{skill}' absent from profile text"
+                assert skill in ptext, f"{cid}: reasoning names '{skill}' absent from profile text"
 
 
 def test_claimed_skills_strictly_grounded(rubric, sample_candidates):
@@ -73,7 +85,7 @@ def test_reasoning_mentions_real_yoe(rubric):
 
 def test_variation_across_candidates(rubric, sample_candidates):
     texts = []
-    for i, (cid, raw) in enumerate(sample_candidates.items()):
+    for i, (_cid, raw) in enumerate(sample_candidates.items()):
         rec = _record(raw, rubric, rank=i + 1)
         texts.append(reasoning.generate(raw, rubric, rec))
     # at least 90% unique among the sample
@@ -92,10 +104,19 @@ def test_low_rank_filler_tone(rubric):
     # a weak candidate at rank 95 should read as adjacent/filler, not glowing
     c = make_candidate(
         profile={"current_title": "Accountant", "years_of_experience": 12.0},
-        career_history=[{"company": "Acme", "title": "Accountant",
-                         "start_date": "2014-01-01", "end_date": None, "duration_months": 100,
-                         "is_current": True, "industry": "Finance", "company_size": "201-500",
-                         "description": "ledgers"}],
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "Accountant",
+                "start_date": "2014-01-01",
+                "end_date": None,
+                "duration_months": 100,
+                "is_current": True,
+                "industry": "Finance",
+                "company_size": "201-500",
+                "description": "ledgers",
+            }
+        ],
         skills=[],
     )
     rec = _record(c, rubric, rank=95, semantic=0.1)

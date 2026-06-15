@@ -15,6 +15,7 @@ Usage:
   python precompute.py --candidates ./data/candidates.jsonl
   python precompute.py --candidates ./data/candidates.jsonl --limit 2000   # quick test
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,6 +55,7 @@ def main():
     # Use all CPU threads for the transformer forward pass (precompute only).
     try:
         import torch
+
         torch.set_num_threads(os.cpu_count() or 8)
     except Exception:
         pass
@@ -65,7 +67,8 @@ def main():
     def log(msg):
         line = f"[{time.strftime('%H:%M:%S')}] {msg}"
         print(line, flush=True)
-        logf.write(line + "\n"); logf.flush()
+        logf.write(line + "\n")
+        logf.flush()
 
     rubric = json.load(open(os.path.join("artifacts", "jd_rubric.json"), encoding="utf-8"))
 
@@ -82,8 +85,9 @@ def main():
 
     # ---- 2. embeddings (checkpointed + resumable) ----
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer(args.model, device="cpu")
-    model.max_seq_length = args.max_seq            # shorter context -> ~2x faster on CPU
+    model.max_seq_length = args.max_seq  # shorter context -> ~2x faster on CPU
     dim = model.get_sentence_embedding_dimension()
 
     partial = os.path.join(out, "_emb_partial.npy")
@@ -102,16 +106,21 @@ def main():
     log(f"[2/4] Encoding with {args.model} (max_seq={args.max_seq}) from {start:,} ...")
     bs = args.batch_size
     for i in range(start, n, bs):
-        chunk = blobs[i:i + bs]
-        vecs = model.encode(chunk, batch_size=bs, normalize_embeddings=True,
-                            show_progress_bar=False, convert_to_numpy=True)
-        emb[i:i + len(chunk)] = vecs
+        chunk = blobs[i : i + bs]
+        vecs = model.encode(
+            chunk,
+            batch_size=bs,
+            normalize_embeddings=True,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+        )
+        emb[i : i + len(chunk)] = vecs
         done = min(i + bs, n)
         if (i // bs) % 20 == 0 or done == n:
             rate = (done - start) / max(1e-6, time.time() - t0)
             eta = (n - done) / max(1e-6, rate)
             log(f"      {done:,}/{n:,}  ({rate:.0f}/s, eta {eta/60:.0f}m)")
-        if (i // bs) % 50 == 0 and done < n:        # checkpoint every ~50 batches
+        if (i // bs) % 50 == 0 and done < n:  # checkpoint every ~50 batches
             np.save(partial, emb[:done].astype(np.float16))
             json.dump({"n": n, "model": args.model, "done": done}, open(progress, "w"))
 
@@ -119,10 +128,13 @@ def main():
 
     facets = rubric["facets"]
     facet_text = [BGE_QUERY_PREFIX + f for f in facets] if "bge" in args.model.lower() else facets
-    facet_emb = model.encode(facet_text, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32)
+    facet_emb = model.encode(facet_text, normalize_embeddings=True, convert_to_numpy=True).astype(
+        np.float32
+    )
 
     # population semantic-fit bounds (p5/p95) — let rank-time scale stably for any N
     from lighthouse import scoring as _sc
+
     sem_raw = _sc.raw_semantic_fit(emb, facet_emb)
     sem_p5, sem_p95 = float(np.percentile(sem_raw, 5)), float(np.percentile(sem_raw, 95))
 
@@ -132,11 +144,17 @@ def main():
     np.save(os.path.join(out, "cand_emb.npy"), emb16)
     np.save(os.path.join(out, "jd_facet_emb.npy"), facet_emb)
     meta = {
-        "model": args.model, "dim": int(dim), "n_candidates": n,
-        "n_facets": len(facets), "seed": SEED, "max_seq": args.max_seq,
+        "model": args.model,
+        "dim": int(dim),
+        "n_candidates": n,
+        "n_facets": len(facets),
+        "seed": SEED,
+        "max_seq": args.max_seq,
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "elapsed_sec": round(time.time() - t0, 1), "emb_dtype": "float16",
-        "semantic_p5": sem_p5, "semantic_p95": sem_p95,
+        "elapsed_sec": round(time.time() - t0, 1),
+        "emb_dtype": "float16",
+        "semantic_p5": sem_p5,
+        "semantic_p95": sem_p95,
     }
     json.dump(meta, open(os.path.join(out, "precompute_meta.json"), "w"), indent=2)
     log(f"      saved cand_emb {emb16.shape} ({emb16.nbytes/1e6:.1f} MB)")
@@ -147,6 +165,7 @@ def main():
         try:
             log("[4/4] Building BM25 index + scoring vs JD query ...")
             from rank_bm25 import BM25Okapi
+
             bm25 = BM25Okapi([tokenize(b) for b in blobs])
             query_terms = set()
             for s in rubric["jd_relevant_skills"]:

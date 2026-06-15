@@ -8,24 +8,27 @@ empty, and the dataset uses sentinels (`github_activity_score == -1`,
 `offer_acceptance_rate == -1`, empty `skill_assessment_scores`). Nothing in this
 module should ever raise on a well-formed-but-sparse profile.
 """
+
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from datetime import date, datetime
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Low-level safe accessors
 # ---------------------------------------------------------------------------
 
-def _s(d: Optional[dict], key: str, default: str = "") -> str:
+
+def _s(d: dict | None, key: str, default: str = "") -> str:
     if not isinstance(d, dict):
         return default
     v = d.get(key, default)
     return v if isinstance(v, str) else (default if v is None else str(v))
 
 
-def _f(d: Optional[dict], key: str, default: float = 0.0) -> float:
+def _f(d: dict | None, key: str, default: float = 0.0) -> float:
     if not isinstance(d, dict):
         return default
     v = d.get(key, default)
@@ -35,7 +38,7 @@ def _f(d: Optional[dict], key: str, default: float = 0.0) -> float:
         return default
 
 
-def _i(d: Optional[dict], key: str, default: int = 0) -> int:
+def _i(d: dict | None, key: str, default: int = 0) -> int:
     if not isinstance(d, dict):
         return default
     v = d.get(key, default)
@@ -45,14 +48,14 @@ def _i(d: Optional[dict], key: str, default: int = 0) -> int:
         return default
 
 
-def _b(d: Optional[dict], key: str, default: bool = False) -> bool:
+def _b(d: dict | None, key: str, default: bool = False) -> bool:
     if not isinstance(d, dict):
         return default
     v = d.get(key, default)
     return bool(v) if isinstance(v, bool) else default
 
 
-def parse_date(s: Any) -> Optional[date]:
+def parse_date(s: Any) -> date | None:
     """Parse an ISO date string; return None for missing/invalid/null."""
     if not s or not isinstance(s, str):
         return None
@@ -66,9 +69,10 @@ def parse_date(s: Any) -> Optional[date]:
 # Streaming reader
 # ---------------------------------------------------------------------------
 
+
 def iter_raw(path: str) -> Iterator[dict]:
     """Yield raw candidate dicts from a JSONL file, one line at a time."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -80,7 +84,7 @@ def iter_raw(path: str) -> Iterator[dict]:
                 continue
 
 
-def load_all(path: str) -> List[dict]:
+def load_all(path: str) -> list[dict]:
     """Load every raw candidate record into a list."""
     return list(iter_raw(path))
 
@@ -89,55 +93,62 @@ def load_all(path: str) -> List[dict]:
 # Normalisation
 # ---------------------------------------------------------------------------
 
-def get_skills(raw: dict) -> List[dict]:
+
+def get_skills(raw: dict) -> list[dict]:
     skills = raw.get("skills") or []
     out = []
     for sk in skills:
         if not isinstance(sk, dict):
             continue
-        out.append({
-            "name": _s(sk, "name"),
-            "proficiency": _s(sk, "proficiency", "beginner").lower(),
-            "endorsements": _i(sk, "endorsements"),
-            "duration_months": _i(sk, "duration_months"),
-        })
+        out.append(
+            {
+                "name": _s(sk, "name"),
+                "proficiency": _s(sk, "proficiency", "beginner").lower(),
+                "endorsements": _i(sk, "endorsements"),
+                "duration_months": _i(sk, "duration_months"),
+            }
+        )
     return out
 
 
-def get_career(raw: dict) -> List[dict]:
+def get_career(raw: dict) -> list[dict]:
     hist = raw.get("career_history") or []
     out = []
     for h in hist:
         if not isinstance(h, dict):
             continue
-        out.append({
-            "company": _s(h, "company"),
-            "title": _s(h, "title"),
-            "start_date": parse_date(h.get("start_date")),
-            "end_date": parse_date(h.get("end_date")),
-            "duration_months": _i(h, "duration_months"),
-            "is_current": _b(h, "is_current"),
-            "industry": _s(h, "industry"),
-            "company_size": _s(h, "company_size"),
-            "description": _s(h, "description"),
-        })
+        out.append(
+            {
+                "company": _s(h, "company"),
+                "title": _s(h, "title"),
+                "start_date": parse_date(h.get("start_date")),
+                "end_date": parse_date(h.get("end_date")),
+                "duration_months": _i(h, "duration_months"),
+                "is_current": _b(h, "is_current"),
+                "industry": _s(h, "industry"),
+                "company_size": _s(h, "company_size"),
+                "description": _s(h, "description"),
+            }
+        )
     return out
 
 
-def get_education(raw: dict) -> List[dict]:
+def get_education(raw: dict) -> list[dict]:
     edu = raw.get("education") or []
     out = []
     for e in edu:
         if not isinstance(e, dict):
             continue
-        out.append({
-            "institution": _s(e, "institution"),
-            "degree": _s(e, "degree"),
-            "field_of_study": _s(e, "field_of_study"),
-            "start_year": _i(e, "start_year"),
-            "end_year": _i(e, "end_year"),
-            "tier": _s(e, "tier", "unknown"),
-        })
+        out.append(
+            {
+                "institution": _s(e, "institution"),
+                "degree": _s(e, "degree"),
+                "field_of_study": _s(e, "field_of_study"),
+                "start_year": _i(e, "start_year"),
+                "end_year": _i(e, "end_year"),
+                "tier": _s(e, "tier", "unknown"),
+            }
+        )
     return out
 
 
@@ -160,6 +171,7 @@ def candidate_id(raw: dict) -> str:
 # Canonical text blob (used by both embeddings and BM25)
 # ---------------------------------------------------------------------------
 
+
 def build_text_blob(raw: dict) -> str:
     """Build one clean text blob per candidate for semantic + lexical matching.
 
@@ -169,7 +181,7 @@ def build_text_blob(raw: dict) -> str:
     evidence of what the person actually *did*.
     """
     p = get_profile(raw)
-    parts: List[str] = []
+    parts: list[str] = []
 
     headline = _s(p, "headline")
     if headline:

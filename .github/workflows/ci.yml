@@ -33,8 +33,17 @@ jobs:
           pip install numpy==2.2.6 pandas==2.3.3 PyYAML==6.0.2
           pip install -r requirements-dev.txt
 
-      - name: Run test suite
-        run: pytest -q
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Type check (mypy)
+        run: mypy lighthouse
+
+      - name: Run test suite with coverage
+        run: pytest -q --cov=lighthouse --cov-report=term-missing
 
       - name: Validate submission format (graded artifact)
         run: python validate_submission.py submission.csv

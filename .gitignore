@@ -21,6 +21,14 @@ dist/
 venv/
 env/
 
+# ---- Tooling caches / coverage (dev & CI only) ----
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+
 # ---- Artifacts ----
 # cand_emb.npy is ~77MB (< GitHub's 100MB limit) and IS committed so the rank
 # step reproduces without a 69-min precompute. Checkpoints/logs are not.

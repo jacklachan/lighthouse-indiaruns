@@ -8,11 +8,11 @@ metrics cannot provide. Writes eval/blind_results.md.
 Usage:
   python eval/blind_compare.py --candidates ./data/candidates.jsonl
 """
+
 from __future__ import annotations
 
 import argparse
 import csv
-import json
 
 from lighthouse import loader, metrics, ranker
 
@@ -26,7 +26,7 @@ def _spearman(rank_a, rank_b):
         return 0.0
     ma = sum(rank_a) / n
     mb = sum(rank_b) / n
-    cov = sum((a - ma) * (b - mb) for a, b in zip(rank_a, rank_b))
+    cov = sum((a - ma) * (b - mb) for a, b in zip(rank_a, rank_b, strict=False))
     va = sum((a - ma) ** 2 for a in rank_a) ** 0.5
     vb = sum((b - mb) ** 2 for b in rank_b) ** 0.5
     return cov / (va * vb) if va and vb else 0.0
@@ -62,6 +62,7 @@ def main():
     common = [c for c in ids if c in by_id]
     lh_scores = [by_id[c]["final_score"] for c in common]
     hu = [human[c] for c in common]
+
     # convert to ranks for Spearman
     def to_ranks(xs):
         order = sorted(range(len(xs)), key=lambda i: xs[i])
@@ -69,20 +70,25 @@ def main():
         for r, i in enumerate(order):
             ranks[i] = r
         return ranks
+
     rho = _spearman(to_ranks(lh_scores), to_ranks(hu))
 
     out = []
     out.append("## 4. Independent human validation (blind)\n")
-    out.append(f"A human labeled **{len(human)}** candidates blind (tiers 0–5) in "
-               f"`{BLIND}`, without seeing Lighthouse's scores — labels independent of the "
-               f"ranker, unlike §2.\n")
-    out.append(f"- **NDCG (full)** of Lighthouse's order vs the human tiers: **{ndcg:.3f}** "
-               f"(NDCG@10 {ndcg10:.3f}).")
+    out.append(
+        f"A human labeled **{len(human)}** candidates blind (tiers 0–5) in "
+        f"`{BLIND}`, without seeing Lighthouse's scores — labels independent of the "
+        f"ranker, unlike §2.\n"
+    )
+    out.append(
+        f"- **NDCG (full)** of Lighthouse's order vs the human tiers: **{ndcg:.3f}** "
+        f"(NDCG@10 {ndcg10:.3f})."
+    )
     out.append(f"- **Spearman ρ** (Lighthouse score vs human tier): **{rho:.3f}**.")
     out.append(f"- n = {len(human)} (small by design; independence matters more than size here).\n")
     open("eval/blind_results.md", "w", encoding="utf-8").write("\n".join(out) + "\n")
     print("\n".join(out))
-    print(f"\nWrote eval/blind_results.md. Paste/append it into eval/results.md as §4.")
+    print("\nWrote eval/blind_results.md. Paste/append it into eval/results.md as §4.")
 
 
 if __name__ == "__main__":

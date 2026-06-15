@@ -7,6 +7,7 @@ CPU only, no network, < 5 minutes, < 16 GB RAM. Loads precomputed artifacts
 model + gates + behavioral modifier, zeroes honeypots, ranks with the spec
 tie-break, generates grounded reasoning, and writes a validator-clean CSV.
 """
+
 from __future__ import annotations
 
 import argparse

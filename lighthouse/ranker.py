@@ -5,20 +5,20 @@ Pure numpy/pandas/Python. No network, no model inference over the full pool
 fallback (`_embeddings_for`) used by the HuggingFace app when it is handed
 candidates that were never precomputed — never on the 100K official path.
 """
+
 from __future__ import annotations
 
 import json
 import os
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
 from . import loader, scoring
 
-
 # ---------------------------------------------------------------------------
 # artifact loading
 # ---------------------------------------------------------------------------
+
 
 def load_artifacts(art_dir: str) -> dict:
     rubric = json.load(open(os.path.join(art_dir, "jd_rubric.json"), encoding="utf-8"))
@@ -32,12 +32,18 @@ def load_artifacts(art_dir: str) -> dict:
     if os.path.exists(meta_path):
         meta = json.load(open(meta_path, encoding="utf-8"))
         sem_lo, sem_hi = meta.get("semantic_p5"), meta.get("semantic_p95")
-    return {"rubric": rubric, "ids": ids, "cand_emb": cand_emb,
-            "facet_emb": facet_emb, "id_to_row": id_to_row,
-            "sem_lo": sem_lo, "sem_hi": sem_hi}
+    return {
+        "rubric": rubric,
+        "ids": ids,
+        "cand_emb": cand_emb,
+        "facet_emb": facet_emb,
+        "id_to_row": id_to_row,
+        "sem_lo": sem_lo,
+        "sem_hi": sem_hi,
+    }
 
 
-def _embeddings_for(raws: List[dict], art: dict, model_name: Optional[str]) -> np.ndarray:
+def _embeddings_for(raws: list[dict], art: dict, model_name: str | None) -> np.ndarray:
     """Return an embedding matrix aligned to `raws`, using precomputed vectors
     where available and encoding any missing ones on the fly (small-sample only).
     """
@@ -55,9 +61,13 @@ def _embeddings_for(raws: List[dict], art: dict, model_name: Optional[str]) -> n
     if missing_blobs:
         # small-sample fallback (e.g. HF app) — load the small encoder lazily
         from sentence_transformers import SentenceTransformer
+
         meta_path = os.path.join("artifacts", "precompute_meta.json")
-        mn = model_name or (json.load(open(meta_path))["model"]
-                            if os.path.exists(meta_path) else "BAAI/bge-small-en-v1.5")
+        mn = model_name or (
+            json.load(open(meta_path))["model"]
+            if os.path.exists(meta_path)
+            else "BAAI/bge-small-en-v1.5"
+        )
         model = SentenceTransformer(mn, device="cpu")
         vecs = model.encode(missing_blobs, normalize_embeddings=True, convert_to_numpy=True)
         for j, i in enumerate(missing_idx):
@@ -69,18 +79,33 @@ def _embeddings_for(raws: List[dict], art: dict, model_name: Optional[str]) -> n
 # scoring all candidates
 # ---------------------------------------------------------------------------
 
-def score_all(raws: List[dict], art: dict, drop: str = None,
-              model_name: Optional[str] = None, use_gates: bool = True,
-              use_honeypot: bool = True, use_behavior: bool = True) -> List[dict]:
+
+def score_all(
+    raws: list[dict],
+    art: dict,
+    drop: str | None = None,
+    model_name: str | None = None,
+    use_gates: bool = True,
+    use_honeypot: bool = True,
+    use_behavior: bool = True,
+) -> list[dict]:
     rubric = art["rubric"]
     emb = _embeddings_for(raws, art, model_name)
     sem_raw = scoring.raw_semantic_fit(emb, art["facet_emb"])
     sem_norm = scoring.normalize_semantic(sem_raw, art.get("sem_lo"), art.get("sem_hi"))
     records = []
-    for raw, sf in zip(raws, sem_norm):
-        records.append(scoring.score_candidate(
-            raw, rubric, float(sf), drop=drop, use_gates=use_gates,
-            use_honeypot=use_honeypot, use_behavior=use_behavior))
+    for raw, sf in zip(raws, sem_norm, strict=False):
+        records.append(
+            scoring.score_candidate(
+                raw,
+                rubric,
+                float(sf),
+                drop=drop,
+                use_gates=use_gates,
+                use_honeypot=use_honeypot,
+                use_behavior=use_behavior,
+            )
+        )
     return records
 
 
@@ -88,7 +113,8 @@ def score_all(raws: List[dict], art: dict, drop: str = None,
 # ranking + ordering (spec-compliant)
 # ---------------------------------------------------------------------------
 
-def rank_records(records: List[dict], top: int = 100) -> List[dict]:
+
+def rank_records(records: list[dict], top: int = 100) -> list[dict]:
     """Sort by final_score desc, tie-break candidate_id ascending; take top-N.
 
     Guarantees the validator's constraints: scores non-increasing by rank and

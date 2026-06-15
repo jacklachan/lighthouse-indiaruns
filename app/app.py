@@ -8,6 +8,7 @@ the demo path; the official 100K run uses fully precomputed embeddings.
 
 Run locally:  streamlit run app/app.py
 """
+
 import json
 import os
 import sys
@@ -45,9 +46,15 @@ def _build_art(rubric, facet_emb, sem_lo=None, sem_hi=None):
     """Empty precomputed set -> every candidate is encoded on the fly.
     Carries the fixed population semantic bounds so small uploads score stably."""
     dim = facet_emb.shape[1]
-    return {"rubric": rubric, "ids": [], "id_to_row": {},
-            "cand_emb": np.zeros((0, dim), dtype=np.float32), "facet_emb": facet_emb,
-            "sem_lo": sem_lo, "sem_hi": sem_hi}
+    return {
+        "rubric": rubric,
+        "ids": [],
+        "id_to_row": {},
+        "cand_emb": np.zeros((0, dim), dtype=np.float32),
+        "facet_emb": facet_emb,
+        "sem_lo": sem_lo,
+        "sem_hi": sem_hi,
+    }
 
 
 def _parse_jsonl(text: str):
@@ -64,17 +71,23 @@ def _parse_jsonl(text: str):
 
 
 st.title("🔦 Lighthouse — recruiter-grade candidate ranker")
-st.caption("Keyword filters surface the loudest profiles. Lighthouse surfaces the right ones — "
-           "and ignores the fakes that fool keyword filters.")
+st.caption(
+    "Keyword filters surface the loudest profiles. Lighthouse surfaces the right ones — "
+    "and ignores the fakes that fool keyword filters."
+)
 
 with st.sidebar:
     st.header("Input")
     mode = st.radio("Candidate source", ["Preloaded sample (100)", "Upload JSONL (≤100)"])
     st.markdown("---")
-    st.markdown("**JD:** Senior AI Engineer @ Redrob AI — production embeddings/retrieval, "
-                "ranking-eval, product (not services), 6–8 yrs ideal, Noida/Pune/India.")
-    st.markdown("Ranking runs on **CPU, no hosted LLM**. The five-component score is gated by "
-                "JD hard-negatives and a behavioral modifier; honeypots are zeroed.")
+    st.markdown(
+        "**JD:** Senior AI Engineer @ Redrob AI — production embeddings/retrieval, "
+        "ranking-eval, product (not services), 6–8 yrs ideal, Noida/Pune/India."
+    )
+    st.markdown(
+        "Ranking runs on **CPU, no hosted LLM**. The five-component score is gated by "
+        "JD hard-negatives and a behavioral modifier; honeypots are zeroed."
+    )
 
 rubric, facet_emb, sem_lo, sem_hi = _facets_and_rubric()
 
@@ -86,7 +99,9 @@ if mode.startswith("Preloaded"):
     else:
         st.error("sample_candidates.jsonl not found.")
 else:
-    up = st.file_uploader("Upload candidates JSONL (one JSON candidate per line)", type=["jsonl", "json"])
+    up = st.file_uploader(
+        "Upload candidates JSONL (one JSON candidate per line)", type=["jsonl", "json"]
+    )
     if up is not None:
         raws = _parse_jsonl(up.read().decode("utf-8"))
         st.info(f"Parsed {len(raws)} candidates.")
@@ -107,34 +122,50 @@ if raws and st.button("🔦 Rank candidates", type="primary"):
         for rec in top:
             raw = raw_by_id[rec["candidate_id"]]
             p = loader.get_profile(raw)
-            rows.append({
-                "rank": rec["rank"],
-                "candidate_id": rec["candidate_id"],
-                "score": rec["final_score"],
-                "title": loader._s(p, "current_title"),
-                "country": loader._s(p, "country"),
-                "yrs": loader._f(p, "years_of_experience"),
-                "honeypot": "⚠️" if rec["honeypot"] else "",
-                "reasoning": reasoning.generate(raw, rubric, rec),
-            })
+            rows.append(
+                {
+                    "rank": rec["rank"],
+                    "candidate_id": rec["candidate_id"],
+                    "score": rec["final_score"],
+                    "title": loader._s(p, "current_title"),
+                    "country": loader._s(p, "country"),
+                    "yrs": loader._f(p, "years_of_experience"),
+                    "honeypot": "⚠️" if rec["honeypot"] else "",
+                    "reasoning": reasoning.generate(raw, rubric, rec),
+                }
+            )
     df = pd.DataFrame(rows)
     n_hp = sum(1 for r in top if r["honeypot"])
     c1, c2, c3 = st.columns(3)
     c1.metric("Candidates ranked", len(rows))
     c2.metric("Honeypots flagged", n_hp)
     c3.metric("Top score", f"{rows[0]['score']:.3f}" if rows else "—")
-    st.dataframe(df, use_container_width=True, hide_index=True,
-                 column_config={"score": st.column_config.NumberColumn(format="%.4f")})
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={"score": st.column_config.NumberColumn(format="%.4f")},
+    )
 
     with st.expander("Inspect the top candidate's component breakdown"):
         best = top[0]
-        st.json({"candidate_id": best["candidate_id"], "components": best["components"],
-                 "base": best["base"], "gate_mult": best["gate_mult"],
-                 "gate_reasons": best["gate_reasons"], "behavior_mult": best["behavior_mult"],
-                 "honeypot": best["honeypot"]})
+        st.json(
+            {
+                "candidate_id": best["candidate_id"],
+                "components": best["components"],
+                "base": best["base"],
+                "gate_mult": best["gate_mult"],
+                "gate_reasons": best["gate_reasons"],
+                "behavior_mult": best["behavior_mult"],
+                "honeypot": best["honeypot"],
+            }
+        )
 
-    st.download_button("⬇️ Download ranking CSV",
-                       df[["candidate_id", "rank", "score", "reasoning"]].to_csv(index=False),
-                       file_name="submission.csv", mime="text/csv")
+    st.download_button(
+        "⬇️ Download ranking CSV",
+        df[["candidate_id", "rank", "score", "reasoning"]].to_csv(index=False),
+        file_name="submission.csv",
+        mime="text/csv",
+    )
 elif not raws:
     st.warning("Choose the preloaded sample or upload a JSONL to begin.")

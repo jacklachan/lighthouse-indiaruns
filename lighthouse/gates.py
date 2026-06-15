@@ -8,10 +8,10 @@ generator can name the concern honestly.
 Every gate returns at most one (key, multiplier, reason). `apply_gates` returns
 the product of multipliers and the list of fired reasons.
 """
+
 from __future__ import annotations
 
 from datetime import date
-from typing import List, Tuple
 
 from . import features, loader
 
@@ -31,7 +31,7 @@ def _gate(rubric: dict, key: str) -> dict:
     return next(g for g in rubric["hard_negatives"] if g["key"] == key)
 
 
-def gate_services_only(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_services_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "services_only")
     if features.services_fraction(raw, rubric) >= 0.999 and loader.get_career(raw):
         cur = loader._s(loader.get_profile(raw), "current_company")
@@ -39,7 +39,7 @@ def gate_services_only(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
     return 1.0, ""
 
 
-def gate_location_visa(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_location_visa(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "location_visa")
     p = loader.get_profile(raw)
     sig = loader.get_signals(raw)
@@ -48,12 +48,18 @@ def gate_location_visa(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
         relocate = bool(sig.get("willing_to_relocate"))
         loc = loader._s(p, "location") or country.title()
         if not relocate:
-            return g["penalty"], f"based in {loc} ({country.title()}) and not willing to relocate; no visa sponsorship"
-        return g["soft_penalty"], f"based outside India ({loc}); relocation willing but visa/logistics risk"
+            return (
+                g["penalty"],
+                f"based in {loc} ({country.title()}) and not willing to relocate; no visa sponsorship",
+            )
+        return (
+            g["soft_penalty"],
+            f"based outside India ({loc}); relocation willing but visa/logistics risk",
+        )
     return 1.0, ""
 
 
-def gate_research_only(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_research_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "research_only")
     research = features.count_hits(text, g["positive_terms"])
     production = features.count_hits(text, g["production_terms"])
@@ -62,21 +68,27 @@ def gate_research_only(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
     return 1.0, ""
 
 
-def gate_cv_speech_only(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_cv_speech_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "cv_speech_only")
     domain = features.count_hits(text, g["domain_terms"])
     nlp_ir = features.count_hits(text, g["nlp_ir_terms"])
     if domain >= 2 and nlp_ir == 0:
-        return g["penalty"], "primary expertise in computer vision/speech/robotics with no NLP/IR signal"
+        return (
+            g["penalty"],
+            "primary expertise in computer vision/speech/robotics with no NLP/IR signal",
+        )
     return 1.0, ""
 
 
-def gate_langchain_only_recent(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_langchain_only_recent(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "langchain_only_recent")
     wrapper = features.count_hits(text, g["wrapper_terms"])
     depth = features.count_hits(text, g["depth_terms"])
     if wrapper >= 2 and depth == 0:
-        return g["penalty"], "AI experience appears limited to recent LLM-wrapper tooling without classical ML/retrieval depth"
+        return (
+            g["penalty"],
+            "AI experience appears limited to recent LLM-wrapper tooling without classical ML/retrieval depth",
+        )
     return 1.0, ""
 
 
@@ -91,25 +103,33 @@ def _seniority_level(title: str) -> int:
     return 0
 
 
-def gate_title_chaser(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_title_chaser(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     """Fire only on genuine title-chasing: short tenures AND an escalating
     seniority ladder. Lateral moves at short tenure (common for early-career ML
     engineers, e.g. RecSys -> Search -> NLP) are NOT title-chasing.
     """
     g = _gate(rubric, "title_chaser")
     stats = features.tenure_stats(raw)
-    if not (stats["n_roles"] >= g["min_roles"] and 0 < stats["avg_tenure_months"] < g["max_avg_tenure_months"]):
+    if not (
+        stats["n_roles"] >= g["min_roles"]
+        and 0 < stats["avg_tenure_months"] < g["max_avg_tenure_months"]
+    ):
         return 1.0, ""
     # titles in chronological (oldest-first) order
     career = sorted(loader.get_career(raw), key=lambda h: (h["start_date"] or _MIN_DATE))
     levels = [_seniority_level(h["title"]) for h in career]
-    escalated = levels and (max(levels) - min(levels) >= 2) and levels[-1] >= levels[0] and levels[-1] >= 2
+    escalated = (
+        levels and (max(levels) - min(levels) >= 2) and levels[-1] >= levels[0] and levels[-1] >= 2
+    )
     if escalated:
-        return g["penalty"], f"escalating titles while job-hopping every ~{stats['avg_tenure_months']:.0f} months across {stats['n_roles']} roles (title-chaser pattern)"
+        return (
+            g["penalty"],
+            f"escalating titles while job-hopping every ~{stats['avg_tenure_months']:.0f} months across {stats['n_roles']} roles (title-chaser pattern)",
+        )
     return 1.0, ""
 
 
-def gate_non_technical_role(raw: dict, rubric: dict, text: str) -> Tuple[float, str]:
+def gate_non_technical_role(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "non_technical_role")
     p = loader.get_profile(raw)
     cur_class = features.classify_title(loader._s(p, "current_title"), rubric)
@@ -118,7 +138,10 @@ def gate_non_technical_role(raw: dict, rubric: dict, text: str) -> Tuple[float, 
         career = loader.get_career(raw)
         has_strong = any(features.classify_title(h["title"], rubric) == "strong" for h in career)
         if not has_strong:
-            return g["penalty"], f"current role '{loader._s(p,'current_title')}' is non-engineering with no AI/ML role in career history"
+            return (
+                g["penalty"],
+                f"current role '{loader._s(p,'current_title')}' is non-engineering with no AI/ML role in career history",
+            )
     return 1.0, ""
 
 
@@ -133,11 +156,11 @@ GATES = [
 ]
 
 
-def apply_gates(raw: dict, rubric: dict) -> Tuple[float, List[str]]:
+def apply_gates(raw: dict, rubric: dict) -> tuple[float, list[str]]:
     """Return (combined_multiplier, [fired reasons])."""
     text = _career_text(raw)
     mult = 1.0
-    reasons: List[str] = []
+    reasons: list[str] = []
     for fn in GATES:
         m, reason = fn(raw, rubric, text)
         if m < 1.0:

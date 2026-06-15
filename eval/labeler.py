@@ -14,9 +14,8 @@ role_coherence from the ranker measurably degrades it.
 Tier meaning (aligned to the JD's "ideal candidate"):
   5 strong fit  | 4 good | 3 relevant | 2 marginal | 1 weak | 0 non-fit/honeypot
 """
-from __future__ import annotations
 
-from typing import Tuple
+from __future__ import annotations
 
 from lighthouse import features, gates, honeypot, scoring
 
@@ -35,7 +34,7 @@ def _fit_to_tier(fit: float) -> int:
     return 0
 
 
-def label_candidate(raw: dict, rubric: dict) -> Tuple[int, dict]:
+def label_candidate(raw: dict, rubric: dict) -> tuple[int, dict]:
     """Return (tier, explanation dict)."""
     hp, hp_reasons = honeypot.detect(raw)
     if hp:
@@ -54,26 +53,40 @@ def label_candidate(raw: dict, rubric: dict) -> Tuple[int, dict]:
     caps = []
 
     if "non-engineering" in joined:
-        tier = 0; caps.append("non-technical role")
+        tier = 0
+        caps.append("non-technical role")
     if "not willing to relocate" in joined:
-        tier = min(tier, 1); caps.append("outside India, no relocation")
+        tier = min(tier, 1)
+        caps.append("outside India, no relocation")
     elif "outside india" in joined:
-        tier = min(tier, 3); caps.append("outside India (visa risk)")
+        tier = min(tier, 3)
+        caps.append("outside India (visa risk)")
     if "services/consulting" in joined:
-        tier = min(tier, 2); caps.append("services-only career")
+        tier = min(tier, 2)
+        caps.append("services-only career")
     if "research-heavy" in joined:
-        tier = max(0, tier - 2); caps.append("research-only")
+        tier = max(0, tier - 2)
+        caps.append("research-only")
     if "computer vision/speech" in joined:
-        tier = max(0, tier - 2); caps.append("cv/speech-only")
+        tier = max(0, tier - 2)
+        caps.append("cv/speech-only")
     if "llm-wrapper" in joined:
-        tier = max(0, tier - 2); caps.append("langchain-only-recent")
+        tier = max(0, tier - 2)
+        caps.append("langchain-only-recent")
 
     # availability down-weight (JD: unreachable candidates aren't actually hireable)
     beh_mult, beh_facts = scoring.behavioral_modifier(raw, rubric)
     if beh_mult <= 0.85 and tier > 0:
-        tier = max(0, tier - 1); caps.append("low availability")
+        tier = max(0, tier - 1)
+        caps.append("low availability")
 
     return int(max(0, min(5, tier))), {
-        "fit": round(fit, 3), "rc": rc, "ce": ce, "ef": ef, "ts": ts,
-        "caps": caps, "gate_reasons": gate_reasons, "beh_mult": beh_mult,
+        "fit": round(fit, 3),
+        "rc": rc,
+        "ce": ce,
+        "ef": ef,
+        "ts": ts,
+        "caps": caps,
+        "gate_reasons": gate_reasons,
+        "beh_mult": beh_mult,
     }

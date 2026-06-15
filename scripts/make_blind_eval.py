@@ -10,6 +10,7 @@ Lighthouse agrees with the human (Spearman + NDCG).
 Usage:
   python scripts/make_blind_eval.py --candidates ./data/candidates.jsonl --n 20
 """
+
 from __future__ import annotations
 
 import argparse
@@ -18,8 +19,8 @@ import json
 import os
 import random
 
-from lighthouse import SEED, loader, features
 from eval.build_labels import archetype
+from lighthouse import SEED, loader
 
 
 def _digest(raw: dict, rubric: dict) -> dict:
@@ -31,7 +32,8 @@ def _digest(raw: dict, rubric: dict) -> dict:
     rel_present = [s["name"] for s in skills if s["name"].lower() in rel][:6]
     roles = " | ".join(
         f"{h['title']} @ {h['company']} ({h['industry']}, {h['duration_months']}mo)"
-        for h in career[:4])
+        for h in career[:4]
+    )
     return {
         "candidate_id": loader.candidate_id(raw),
         "current_title": loader._s(p, "current_title"),
@@ -44,7 +46,7 @@ def _digest(raw: dict, rubric: dict) -> dict:
         "jd_relevant_skills_listed": ", ".join(rel_present),
         "recruiter_response_rate": sig.get("recruiter_response_rate"),
         "last_active_date": sig.get("last_active_date"),
-        "human_tier": "",   # <-- the human fills 0..5 (5=strong fit, 0=non-fit), BLIND
+        "human_tier": "",  # <-- the human fills 0..5 (5=strong fit, 0=non-fit), BLIND
     }
 
 
@@ -56,29 +58,38 @@ def main():
     args = ap.parse_args()
 
     rubric = json.load(open("artifacts/jd_rubric.json", encoding="utf-8"))
-    random.seed(SEED + 7)   # different seed from the Claude label set
+    random.seed(SEED + 7)  # different seed from the Claude label set
 
     buckets: dict = {}
     for raw in loader.iter_raw(args.candidates):
         buckets.setdefault(archetype(raw, rubric), []).append(raw)
 
     # spread the sample across archetypes so the human sees fits AND traps
-    want = ["ai_engineer", "plain_language_strong", "keyword_stuffer",
-            "services_only", "location_fail", "honeypot", "other"]
+    want = [
+        "ai_engineer",
+        "plain_language_strong",
+        "keyword_stuffer",
+        "services_only",
+        "location_fail",
+        "honeypot",
+        "other",
+    ]
     per = max(1, args.n // len(want))
     chosen, seen = [], set()
     for a in want:
         for raw in random.sample(buckets.get(a, []), min(per, len(buckets.get(a, [])))):
             if raw["candidate_id"] not in seen:
-                chosen.append(raw); seen.add(raw["candidate_id"])
+                chosen.append(raw)
+                seen.add(raw["candidate_id"])
     # top up to n from the whole pool
     allc = [r for v in buckets.values() for r in v]
     while len(chosen) < args.n and allc:
         raw = random.choice(allc)
         if raw["candidate_id"] not in seen:
-            chosen.append(raw); seen.add(raw["candidate_id"])
-    chosen = chosen[:args.n]
-    random.shuffle(chosen)   # hide archetype ordering from the labeler
+            chosen.append(raw)
+            seen.add(raw["candidate_id"])
+    chosen = chosen[: args.n]
+    random.shuffle(chosen)  # hide archetype ordering from the labeler
 
     rows = [_digest(r, rubric) for r in chosen]
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

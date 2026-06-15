@@ -8,11 +8,10 @@ Every function is pure and deterministic. All text matching is lowercase
 substring matching against term lists in the JD rubric, so the logic is fully
 explainable and traceable back to the JD.
 """
+
 from __future__ import annotations
 
 import math
-from datetime import date
-from typing import Dict, List, Optional
 
 from . import loader
 
@@ -23,16 +22,17 @@ PROFICIENCY_WEIGHT = {"beginner": 0.25, "intermediate": 0.5, "advanced": 0.8, "e
 # text helpers
 # ---------------------------------------------------------------------------
 
+
 def _norm(s: str) -> str:
     return (s or "").lower()
 
 
-def count_hits(text: str, terms: List[str]) -> int:
+def count_hits(text: str, terms: list[str]) -> int:
     t = _norm(text)
     return sum(1 for term in terms if term in t)
 
 
-def any_hit(text: str, terms: List[str]) -> bool:
+def any_hit(text: str, terms: list[str]) -> bool:
     t = _norm(text)
     return any(term in t for term in terms)
 
@@ -40,6 +40,7 @@ def any_hit(text: str, terms: List[str]) -> bool:
 # ---------------------------------------------------------------------------
 # title taxonomy
 # ---------------------------------------------------------------------------
+
 
 def classify_title(title: str, rubric: dict) -> str:
     """Return 'strong' | 'positive' | 'negative' | 'neutral' for a job title."""
@@ -83,6 +84,7 @@ def role_coherence_taxonomy(raw: dict, rubric: dict) -> float:
 # services / product company detection
 # ---------------------------------------------------------------------------
 
+
 def is_services_company(name: str, rubric: dict) -> bool:
     n = _norm(name)
     return any(c in n for c in rubric["hard_negatives"][0]["companies"])
@@ -99,6 +101,7 @@ def services_fraction(raw: dict, rubric: dict) -> float:
 # ---------------------------------------------------------------------------
 # career evidence
 # ---------------------------------------------------------------------------
+
 
 def career_evidence(raw: dict, rubric: dict) -> float:
     """Did they actually BUILD ranking/search/recsys/retrieval at product cos? [0,1]
@@ -130,6 +133,7 @@ def career_evidence(raw: dict, rubric: dict) -> float:
 # experience fit (soft curve)
 # ---------------------------------------------------------------------------
 
+
 def experience_fit(raw: dict, rubric: dict) -> float:
     """Soft curve peaking inside ideal [6,8], in-band [5,9], gentle taper. [0,1]"""
     yoe = loader._f(loader.get_profile(raw), "years_of_experience")
@@ -150,6 +154,7 @@ def experience_fit(raw: dict, rubric: dict) -> float:
 # ---------------------------------------------------------------------------
 # skill trust
 # ---------------------------------------------------------------------------
+
 
 def trust_skills(raw: dict, rubric: dict) -> float:
     """Skills weighted by proficiency x duration x endorsements x assessment,
@@ -202,9 +207,12 @@ def trust_skills(raw: dict, rubric: dict) -> float:
 # tenure stats (for title-chaser gate + reasoning)
 # ---------------------------------------------------------------------------
 
-def tenure_stats(raw: dict) -> Dict[str, float]:
+
+def tenure_stats(raw: dict) -> dict[str, float]:
     career = loader.get_career(raw)
-    completed = [h["duration_months"] for h in career if not h["is_current"] and h["duration_months"] > 0]
+    completed = [
+        h["duration_months"] for h in career if not h["is_current"] and h["duration_months"] > 0
+    ]
     n_roles = len(career)
     avg_tenure = (sum(completed) / len(completed)) if completed else 0.0
     return {"n_roles": n_roles, "avg_tenure_months": round(avg_tenure, 1)}
@@ -213,6 +221,7 @@ def tenure_stats(raw: dict) -> Dict[str, float]:
 # ---------------------------------------------------------------------------
 # bundle: all non-embedding features for one candidate
 # ---------------------------------------------------------------------------
+
 
 def extract_features(raw: dict, rubric: dict) -> dict:
     """All deterministic (non-embedding) features for one candidate."""

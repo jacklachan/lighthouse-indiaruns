@@ -1,4 +1,5 @@
 """Metric correctness against hand-computed values."""
+
 import math
 
 from lighthouse import metrics

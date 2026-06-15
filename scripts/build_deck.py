@@ -109,7 +109,7 @@ def main():
     prs = Presentation(TEMPLATE)
 
     # --- create a Problem slide by duplicating a CONTENT slide (clean background) ---
-    dup = duplicate_slide(prs, 1)                 # clone "Solution Overview" layout/bg
+    duplicate_slide(prs, 1)                       # clone "Solution Overview" layout/bg
     move_slide(prs, len(prs.slides._sldIdLst) - 1, 1)   # place it right after the title
 
     slides = list(prs.slides)

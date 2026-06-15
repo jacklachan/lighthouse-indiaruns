@@ -6,6 +6,7 @@ Writes a JSON summary to eval/eda_report.json and prints a human digest.
 This is a read-only sanity pass: title/skill/location distributions, sentinel
 coverage, experience band, and a first cut at how rare genuine fits are.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -16,12 +17,31 @@ from lighthouse import loader
 
 # Titles that plausibly indicate AI/ML/IR/SWE-ranking work (rough, for EDA only).
 AI_TITLE_HINTS = (
-    "machine learning", "ml engineer", "ai engineer", "applied scientist",
-    "applied ml", "data scientist", "research engineer", "nlp",
-    "recommendation", "search engineer", "ranking", "deep learning",
+    "machine learning",
+    "ml engineer",
+    "ai engineer",
+    "applied scientist",
+    "applied ml",
+    "data scientist",
+    "research engineer",
+    "nlp",
+    "recommendation",
+    "search engineer",
+    "ranking",
+    "deep learning",
 )
-SERVICES_COS = ("tcs", "infosys", "wipro", "accenture", "cognizant", "capgemini",
-                "tech mahindra", "hcl", "mindtree", "ltimindtree")
+SERVICES_COS = (
+    "tcs",
+    "infosys",
+    "wipro",
+    "accenture",
+    "cognizant",
+    "capgemini",
+    "tech mahindra",
+    "hcl",
+    "mindtree",
+    "ltimindtree",
+)
 
 
 def main():
@@ -99,17 +119,25 @@ def main():
         "n_candidates": n,
         "top_titles": titles.most_common(25),
         "top_countries": countries.most_common(12),
-        "n_india": n_india, "pct_india": pct(n_india),
-        "n_ai_title": n_ai_title, "pct_ai_title": pct(n_ai_title),
-        "n_services_current": n_services_current, "pct_services_current": pct(n_services_current),
+        "n_india": n_india,
+        "pct_india": pct(n_india),
+        "n_ai_title": n_ai_title,
+        "pct_ai_title": pct(n_ai_title),
+        "n_services_current": n_services_current,
+        "pct_services_current": pct(n_services_current),
         "sentinels": {
-            "no_github_-1": n_no_github, "pct": pct(n_no_github),
-            "no_offer_history_-1": n_no_offer, "pct_offer": pct(n_no_offer),
-            "empty_skill_assessment": n_empty_assess, "pct_assess": pct(n_empty_assess),
+            "no_github_-1": n_no_github,
+            "pct": pct(n_no_github),
+            "no_offer_history_-1": n_no_offer,
+            "pct_offer": pct(n_no_offer),
+            "empty_skill_assessment": n_empty_assess,
+            "pct_assess": pct(n_empty_assess),
         },
         "behavior": {
-            "willing_to_relocate": n_relocate, "pct_relocate": pct(n_relocate),
-            "open_to_work": n_open, "pct_open": pct(n_open),
+            "willing_to_relocate": n_relocate,
+            "pct_relocate": pct(n_relocate),
+            "open_to_work": n_open,
+            "pct_open": pct(n_open),
         },
         "yoe_histogram": dict(sorted(yoe_buckets.items())),
         "skills_per_candidate_avg": round(sum(skills_per) / max(1, len(skills_per)), 2),
@@ -123,17 +151,27 @@ def main():
         json.dump(report, f, indent=2)
 
     print(f"n = {n:,}")
-    print(f"India: {report['pct_india']}%  | AI-ish title: {report['pct_ai_title']}%  | "
-          f"current at services firm: {report['pct_services_current']}%")
-    print(f"sentinels: no-github {report['sentinels']['pct']}%  "
-          f"no-offer {report['sentinels']['pct_offer']}%  "
-          f"empty-assessment {report['sentinels']['pct_assess']}%")
-    print(f"willing_to_relocate {report['behavior']['pct_relocate']}%  "
-          f"open_to_work {report['behavior']['pct_open']}%")
-    print(f"avg skills/cand {report['skills_per_candidate_avg']}  "
-          f"avg roles/cand {report['roles_per_candidate_avg']}")
-    print(f"skill-months > 1.5x career length (honeypot smell): "
-          f"{report['skillmonths_gt_1.5x_career']} ({report['pct_skillmonths_smell']}%)")
+    print(
+        f"India: {report['pct_india']}%  | AI-ish title: {report['pct_ai_title']}%  | "
+        f"current at services firm: {report['pct_services_current']}%"
+    )
+    print(
+        f"sentinels: no-github {report['sentinels']['pct']}%  "
+        f"no-offer {report['sentinels']['pct_offer']}%  "
+        f"empty-assessment {report['sentinels']['pct_assess']}%"
+    )
+    print(
+        f"willing_to_relocate {report['behavior']['pct_relocate']}%  "
+        f"open_to_work {report['behavior']['pct_open']}%"
+    )
+    print(
+        f"avg skills/cand {report['skills_per_candidate_avg']}  "
+        f"avg roles/cand {report['roles_per_candidate_avg']}"
+    )
+    print(
+        f"skill-months > 1.5x career length (honeypot smell): "
+        f"{report['skillmonths_gt_1.5x_career']} ({report['pct_skillmonths_smell']}%)"
+    )
     print("\nTop 15 current titles:")
     for t, c in titles.most_common(15):
         print(f"  {c:6d}  {t}")

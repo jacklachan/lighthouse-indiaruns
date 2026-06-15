@@ -11,10 +11,10 @@ Grounding guarantee: every skill or employer surfaced is pulled directly from
 the candidate's own `skills` / `career_history` / `profile`, never invented.
 `grounded_terms()` exposes exactly what was used so tests can verify it.
 """
+
 from __future__ import annotations
 
 from datetime import date
-from typing import Dict, List, Tuple
 
 from . import features, loader
 
@@ -22,10 +22,15 @@ REFERENCE_DATE = date(2026, 6, 6)
 
 # representative "build" words; only surfaced if present in the candidate's text
 _EVIDENCE_WORDS = [
-    ("ranking", "ranking"), ("learning to rank", "learning-to-rank"),
-    ("recommendation", "recommendation"), ("recommender", "recommendation"),
-    ("retrieval", "retrieval"), ("search", "search"), ("embedding", "embeddings"),
-    ("semantic search", "semantic search"), ("personalization", "personalization"),
+    ("ranking", "ranking"),
+    ("learning to rank", "learning-to-rank"),
+    ("recommendation", "recommendation"),
+    ("recommender", "recommendation"),
+    ("retrieval", "retrieval"),
+    ("search", "search"),
+    ("embedding", "embeddings"),
+    ("semantic search", "semantic search"),
+    ("personalization", "personalization"),
     ("information retrieval", "information retrieval"),
 ]
 
@@ -44,8 +49,13 @@ def extract_facts(raw: dict, rubric: dict, record: dict) -> dict:
     # JD-relevant skills the candidate actually has, strongest first
     relevant = set(rubric["jd_relevant_skills"])
     rel_present = [s for s in skills if s["name"].lower() in relevant]
-    rel_present.sort(key=lambda s: (features.PROFICIENCY_WEIGHT.get(s["proficiency"], 0.4)
-                                    * min(s["duration_months"] / 24.0, 1.0)), reverse=True)
+    rel_present.sort(
+        key=lambda s: (
+            features.PROFICIENCY_WEIGHT.get(s["proficiency"], 0.4)
+            * min(s["duration_months"] / 24.0, 1.0)
+        ),
+        reverse=True,
+    )
     top_skills = [s["name"] for s in rel_present[:3]]
 
     # product (non-services) employers actually in the career history
@@ -56,7 +66,9 @@ def extract_facts(raw: dict, rubric: dict, record: dict) -> dict:
                 product_cos.append(h["company"])
 
     # which "build" word is genuinely present in their text
-    text = " ".join([loader._s(p, "summary")] + [h["description"] + " " + h["title"] for h in career]).lower()
+    text = " ".join(
+        [loader._s(p, "summary")] + [h["description"] + " " + h["title"] for h in career]
+    ).lower()
     evidence_word = None
     for needle, label in _EVIDENCE_WORDS:
         if needle in text:
@@ -83,7 +95,7 @@ def extract_facts(raw: dict, rubric: dict, record: dict) -> dict:
     }
 
 
-def grounded_terms(raw: dict, rubric: dict, record: dict) -> Dict[str, List[str]]:
+def grounded_terms(raw: dict, rubric: dict, record: dict) -> dict[str, list[str]]:
     """The skills/companies the generator is allowed to mention (for tests)."""
     f = extract_facts(raw, rubric, record)
     return {"skills": f["top_skills"], "companies": f["product_cos"]}
@@ -129,8 +141,11 @@ def _positive_clause(f: dict, comps: dict, band: str) -> str:
 def _concern_clause(f: dict, record: dict, band: str) -> str:
     """Honest concern/gap clause. Prefers the most material concern."""
     concerns = list(record.get("gate_reasons", []))
-    concerns += [c for c in record.get("behavior_facts", [])
-                 if any(k in c for k in ("low", "inactive", "notice", "last active"))]
+    concerns += [
+        c
+        for c in record.get("behavior_facts", [])
+        if any(k in c for k in ("low", "inactive", "notice", "last active"))
+    ]
 
     if record.get("honeypot"):
         return f" Flagged as anomalous: {record['honeypot_reasons'][0]}."

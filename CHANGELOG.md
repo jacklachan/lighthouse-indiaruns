@@ -15,6 +15,17 @@ All notable changes to this project are documented here. The format is loosely b
   rank-time runtime.
 - Project governance and policy docs: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`,
   `CODE_OF_CONDUCT.md`, and this changelog.
+- Lint (ruff), format (black), and type (mypy) gates wired into CI, plus a coverage
+  floor (`fail_under = 75`) on the rank-time package.
+
+### Fixed
+- `normalize_semantic` used the `ndarray.ptp()` method, which NumPy 2.0 removed (the repo
+  pins `numpy==2.2.6`). This raised `AttributeError` in the degenerate-range branch
+  (reachable in the small-N sandbox). Switched to `np.ptp(raw)` — numerically identical,
+  no longer crashes. The 100K rank path never hits this branch, so `submission.csv` is
+  unaffected.
+- Type-only: added explicit `Optional` annotations on `None`-defaulted parameters in
+  `scoring.py` / `ranker.py` (no runtime behavior change).
 
 ### Notes
 - The ranked output (`submission.csv`) and the rank-time runtime dependencies

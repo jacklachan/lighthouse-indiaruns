@@ -17,10 +17,10 @@ modified multiplicatively:
 `semantic_fit` is supplied pre-normalized (population percentile-scaled) by the
 caller; everything else is computed here from the rubric + raw fields.
 """
+
 from __future__ import annotations
 
 from datetime import date
-from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -33,6 +33,7 @@ REFERENCE_DATE = date(2026, 6, 6)
 # semantic fit (embedding side)
 # ---------------------------------------------------------------------------
 
+
 def raw_semantic_fit(cand_emb: np.ndarray, facet_emb: np.ndarray) -> np.ndarray:
     """Per-candidate raw semantic fit = 0.6*max + 0.4*mean facet cosine.
 
@@ -40,11 +41,13 @@ def raw_semantic_fit(cand_emb: np.ndarray, facet_emb: np.ndarray) -> np.ndarray:
     1-D array aligned to cand_emb rows. (max rewards a strong single-facet
     match; mean rewards broad alignment.)
     """
-    cos = cand_emb.astype(np.float32) @ facet_emb.T          # (N, F)
+    cos = cand_emb.astype(np.float32) @ facet_emb.T  # (N, F)
     return 0.6 * cos.max(axis=1) + 0.4 * cos.mean(axis=1)
 
 
-def normalize_semantic(raw: np.ndarray, lo: float = None, hi: float = None) -> np.ndarray:
+def normalize_semantic(
+    raw: np.ndarray, lo: float | None = None, hi: float | None = None
+) -> np.ndarray:
     """Affine-clip raw semantic fit into [0,1].
 
     Prefer FIXED population bounds (`lo`/`hi` = p5/p95 of the full 100K, stored in
@@ -60,7 +63,8 @@ def normalize_semantic(raw: np.ndarray, lo: float = None, hi: float = None) -> n
         lo = float(np.percentile(raw, 5))
         hi = float(np.percentile(raw, 95))
     if hi - lo < 1e-6:
-        return np.clip((raw - raw.min()) / (raw.ptp() + 1e-6), 0, 1)
+        # np.ptp(raw), not raw.ptp(): the ndarray .ptp() method was removed in NumPy 2.0.
+        return np.clip((raw - raw.min()) / (np.ptp(raw) + 1e-6), 0, 1)
     return np.clip((raw - lo) / (hi - lo), 0.0, 1.0)
 
 
@@ -68,7 +72,8 @@ def normalize_semantic(raw: np.ndarray, lo: float = None, hi: float = None) -> n
 # behavioral modifier (multiplicative, clamped)
 # ---------------------------------------------------------------------------
 
-def behavioral_modifier(raw: dict, rubric: dict) -> Tuple[float, List[str]]:
+
+def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
     """Reward reachable/active candidates, penalize stale/unreachable. [floor,ceiling].
 
     Sentinels (-1 github, -1 offer, empty assessments) are NEUTRAL — only
@@ -77,24 +82,29 @@ def behavioral_modifier(raw: dict, rubric: dict) -> Tuple[float, List[str]]:
     b = rubric["behavioral"]
     sig = loader.get_signals(raw)
     delta = 0.0
-    facts: List[str] = []
+    facts: list[str] = []
 
     la = loader.parse_date(sig.get("last_active_date"))
     if la:
         days = (REFERENCE_DATE - la).days
         if days <= b["active_recent_days"]:
-            delta += 0.05; facts.append(f"active {days}d ago")
+            delta += 0.05
+            facts.append(f"active {days}d ago")
         elif days >= b["active_stale_days"]:
-            delta -= 0.15; facts.append(f"inactive {days}d")
+            delta -= 0.15
+            facts.append(f"inactive {days}d")
         elif days >= 120:
-            delta -= 0.07; facts.append(f"last active {days}d ago")
+            delta -= 0.07
+            facts.append(f"last active {days}d ago")
 
     rr = sig.get("recruiter_response_rate")
     if isinstance(rr, (int, float)):
         if rr >= b["good_response_rate"]:
-            delta += 0.04; facts.append(f"{rr:.0%} recruiter response")
+            delta += 0.04
+            facts.append(f"{rr:.0%} recruiter response")
         elif rr <= b["weak_response_rate"]:
-            delta -= 0.12; facts.append(f"low {rr:.0%} recruiter response")
+            delta -= 0.12
+            facts.append(f"low {rr:.0%} recruiter response")
         elif rr <= 0.3:
             delta -= 0.05
 
@@ -108,14 +118,16 @@ def behavioral_modifier(raw: dict, rubric: dict) -> Tuple[float, List[str]]:
         if ic >= b["good_interview_completion"]:
             delta += 0.02
         elif ic < 0.3:
-            delta -= 0.06; facts.append(f"low {ic:.0%} interview completion")
+            delta -= 0.06
+            facts.append(f"low {ic:.0%} interview completion")
 
     notice = sig.get("notice_period_days")
     if isinstance(notice, (int, float)):
         if notice <= b["notice_preferred_days"]:
             delta += 0.02
         elif notice > b["notice_acceptable_days"]:
-            delta -= 0.05; facts.append(f"{int(notice)}-day notice")
+            delta -= 0.05
+            facts.append(f"{int(notice)}-day notice")
 
     mult = float(np.clip(1.0 + delta, b["modifier_floor"], b["modifier_ceiling"]))
     return round(mult, 4), facts
@@ -125,7 +137,8 @@ def behavioral_modifier(raw: dict, rubric: dict) -> Tuple[float, List[str]]:
 # component assembly + final score
 # ---------------------------------------------------------------------------
 
-def components(raw: dict, rubric: dict, semantic_fit: float) -> Dict[str, float]:
+
+def components(raw: dict, rubric: dict, semantic_fit: float) -> dict[str, float]:
     tax = features.role_coherence_taxonomy(raw, rubric)
     # role_coherence blends taxonomy (dominant) with semantic fit
     role_coherence = round(0.7 * tax + 0.3 * semantic_fit, 4)
@@ -138,7 +151,7 @@ def components(raw: dict, rubric: dict, semantic_fit: float) -> Dict[str, float]
     }
 
 
-def base_score(comps: Dict[str, float], rubric: dict, drop: str = None) -> float:
+def base_score(comps: dict[str, float], rubric: dict, drop: str | None = None) -> float:
     """Weighted sum of components. `drop` ablates one component (re-normalising)."""
     w = dict(rubric["component_weights"])
     w.pop("_comment", None)
@@ -149,9 +162,15 @@ def base_score(comps: Dict[str, float], rubric: dict, drop: str = None) -> float
     return s / total_w if total_w else 0.0
 
 
-def score_candidate(raw: dict, rubric: dict, semantic_fit: float, drop: str = None,
-                    use_gates: bool = True, use_honeypot: bool = True,
-                    use_behavior: bool = True) -> dict:
+def score_candidate(
+    raw: dict,
+    rubric: dict,
+    semantic_fit: float,
+    drop: str | None = None,
+    use_gates: bool = True,
+    use_honeypot: bool = True,
+    use_behavior: bool = True,
+) -> dict:
     """Full scoring record for one candidate (feeds ranking + reasoning).
 
     The use_* flags exist for the ablation study in eval/ (e.g. measure NDCG

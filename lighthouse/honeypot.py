@@ -16,10 +16,10 @@ Design notes grounded in EDA over the real 100K:
 
 Reference "now" is the JD reference date (2026-06-06).
 """
+
 from __future__ import annotations
 
 from datetime import date
-from typing import List, Tuple
 
 from . import loader
 
@@ -30,9 +30,9 @@ def _months_between(d0: date, d1: date) -> int:
     return (d1.year - d0.year) * 12 + (d1.month - d0.month)
 
 
-def detect(raw: dict) -> Tuple[bool, List[str]]:
+def detect(raw: dict) -> tuple[bool, list[str]]:
     """Return (is_honeypot, reasons). Any single hard-impossible rule flags."""
-    reasons: List[str] = []
+    reasons: list[str] = []
     p = loader.get_profile(raw)
     yoe = loader._f(p, "years_of_experience")
     career = loader.get_career(raw)
@@ -40,12 +40,16 @@ def detect(raw: dict) -> Tuple[bool, List[str]]:
     edu = loader.get_education(raw)
 
     # --- 1. claimed expertise with zero usage ---
-    expert_zero = [s["name"] for s in skills
-                   if s["proficiency"] in ("advanced", "expert") and s["duration_months"] == 0]
+    expert_zero = [
+        s["name"]
+        for s in skills
+        if s["proficiency"] in ("advanced", "expert") and s["duration_months"] == 0
+    ]
     if len(expert_zero) >= 3:
         reasons.append(
             f"{len(expert_zero)} skills claimed advanced/expert with 0 months used "
-            f"(e.g. {', '.join(expert_zero[:3])})")
+            f"(e.g. {', '.join(expert_zero[:3])})"
+        )
 
     # NOTE: a tempting rule — "a skill used more months than the whole career" —
     # was REMOVED after EDA: skill durations routinely exceed current-job YOE
@@ -67,12 +71,14 @@ def detect(raw: dict) -> Tuple[bool, List[str]]:
             span = _months_between(sd, ed)
             if span >= 0 and abs(span - dm) > 9:
                 reasons.append(
-                    f"role at {h['company']}: stated {dm}mo vs {span}mo implied by dates")
+                    f"role at {h['company']}: stated {dm}mo vs {span}mo implied by dates"
+                )
 
     # --- 5. total tenure overflows the career length ---
     if yoe > 0 and total_role_months > yoe * 12 * 1.6 + 18:
         reasons.append(
-            f"career roles sum to {total_role_months}mo, impossible for {yoe:.1f} yrs experience")
+            f"career roles sum to {total_role_months}mo, impossible for {yoe:.1f} yrs experience"
+        )
 
     # --- 6. grossly impossible single-role tenure (dormant backstop) ---
     # EDA: the pool's longest legitimate single-role tenure is 228 months (19 yrs),
@@ -82,14 +88,17 @@ def detect(raw: dict) -> Tuple[bool, List[str]]:
     # are caught by the date-integrity and tenure-vs-experience rules above.
     for h in career:
         if h["duration_months"] > 300:
-            reasons.append(f"impossible {h['duration_months']}mo (> 25 yr) tenure at {h['company']}")
+            reasons.append(
+                f"impossible {h['duration_months']}mo (> 25 yr) tenure at {h['company']}"
+            )
             break
 
     # --- 7. education dates invalid ---
     for e in edu:
         if e["start_year"] and e["end_year"] and e["end_year"] < e["start_year"]:
             reasons.append(
-                f"education '{e['degree']}' ends ({e['end_year']}) before it starts ({e['start_year']})")
+                f"education '{e['degree']}' ends ({e['end_year']}) before it starts ({e['start_year']})"
+            )
 
     return (len(reasons) > 0, reasons)
 

@@ -10,6 +10,7 @@ Archetypes (the traps + the real fits the JD cares about):
 Usage:
   python eval/build_labels.py --candidates ./data/candidates.jsonl --per-bucket 30
 """
+
 from __future__ import annotations
 
 import argparse
@@ -17,8 +18,8 @@ import json
 import os
 import random
 
-from lighthouse import SEED, features, honeypot, loader, scoring
 from eval.labeler import label_candidate
+from lighthouse import SEED, features, honeypot, loader, scoring
 
 ANCHORS = ["CAND_0000031", "CAND_0000001", "CAND_0000002"]
 
@@ -95,8 +96,12 @@ def main():
     for cid, raw in sampled.items():
         tier, info = label_candidate(raw, rubric)
         a = archetype(raw, rubric)
-        labels[cid] = {"tier": tier, "archetype": a,
-                       "fit": info.get("fit"), "caps": info.get("caps", [])}
+        labels[cid] = {
+            "tier": tier,
+            "archetype": a,
+            "fit": info.get("fit"),
+            "caps": info.get("caps", []),
+        }
         tier_hist[tier] += 1
         arche_of[cid] = a
 
