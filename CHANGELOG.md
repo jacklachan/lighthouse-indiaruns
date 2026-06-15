@@ -31,6 +31,10 @@ All notable changes to this project are documented here. The format is loosely b
 ### Changed
 - README: corrected the artifacts row (float16 `.npy`, no git-lfs) to match the
   reproduce note; both now agree the embeddings ship as a plain committed file.
+- Documented the honeypot tenure-overflow thresholds (the `1.6x` overlap allowance and
+  `+18mo` slack) so the rule reads as flagging impossibility, not concurrency; and
+  clarified that the precomputed BM25 index is an optional lexical signal never loaded
+  at rank-time. Comments only — no behavior change.
 
 ### Fixed
 - `normalize_semantic` used the `ndarray.ptp()` method, which NumPy 2.0 removed (the repo

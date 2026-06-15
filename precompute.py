@@ -160,6 +160,10 @@ def main():
     log(f"      saved cand_emb {emb16.shape} ({emb16.nbytes/1e6:.1f} MB)")
 
     # ---- 4. BM25 (optional; rank.py does not depend on it — non-fatal) ----
+    # The shipped ranking is semantic + deterministic features only. This BM25 index is
+    # precomputed and retained as an optional lexical signal (for ablations / a possible
+    # future hybrid blend); it is never loaded at rank-time, so a failure building it
+    # must not break the artifact build.
     bm25_scores = np.zeros(n, dtype=np.float32)
     if not args.skip_bm25:
         try:

@@ -75,6 +75,12 @@ def detect(raw: dict) -> tuple[bool, list[str]]:
                 )
 
     # --- 5. total tenure overflows the career length ---
+    # Bound = yoe*12 * 1.6 + 18 (months). The 1.6x allowance lets legitimately
+    # concurrent/overlapping roles (e.g. a contract or advisory role alongside a
+    # full-time one) sum past the raw career length, and the +18mo absorbs rounding
+    # and short pre-/post-career gaps. EDA: real profiles sit comfortably under this;
+    # only fabricated histories (stacked full-time roles that could not have
+    # co-occurred) overflow it, so the rule flags impossibility rather than overlap.
     if yoe > 0 and total_role_months > yoe * 12 * 1.6 + 18:
         reasons.append(
             f"career roles sum to {total_role_months}mo, impossible for {yoe:.1f} yrs experience"
