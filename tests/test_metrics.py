@@ -46,3 +46,13 @@ def test_composite_in_unit_range():
     out = metrics.evaluate_ranking(rels)
     assert 0.0 <= out["composite"] <= 1.0
     assert set(out) >= {"NDCG@10", "NDCG@50", "MAP", "P@10", "composite"}
+
+
+def test_ndcg_all_zero_relevance_is_zero():
+    # idcg == 0 -> guard returns 0.0 instead of dividing by zero
+    assert metrics.ndcg_at_k([0, 0, 0], 10) == 0.0
+
+
+def test_precision_at_zero_k_is_zero():
+    # k == 0 -> guard returns 0.0 instead of dividing by zero
+    assert metrics.precision_at_k([5, 5, 5], 0) == 0.0

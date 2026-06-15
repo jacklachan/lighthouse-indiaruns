@@ -107,4 +107,4 @@ show_missing = true
 skip_covered = true
 # Non-regression floor for the rank-time package. Artifact/model-loading paths in
 # ranker.py are exercised end-to-end, not by unit tests, so the bar is a floor not 100%.
-fail_under = 75
+fail_under = 85

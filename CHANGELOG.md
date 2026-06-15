@@ -16,7 +16,14 @@ All notable changes to this project are documented here. The format is loosely b
 - Project governance and policy docs: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`,
   `CODE_OF_CONDUCT.md`, and this changelog.
 - Lint (ruff), format (black), and type (mypy) gates wired into CI, plus a coverage
-  floor (`fail_under = 75`) on the rank-time package.
+  floor on the rank-time package (`fail_under = 85`).
+- Expanded the test suite from 36 to 52 tests: `test_scoring.py` (normalize_semantic
+  bounds/clipping plus a regression guard for the NumPy-2 degenerate-range crash),
+  `test_loader.py` (defensive accessors, date parsing, malformed-line streaming, sparse
+  profiles), and metric edge cases (zero-IDCG NDCG, zero-k precision). Coverage of the
+  rank-time package rose from 78% to 86% (loader 53%→90%, scoring 79%→90%, metrics 100%).
+- Vendored the 50-candidate published sample to `tests/fixtures/sample_candidates.json`
+  so the full suite runs in CI without the untracked challenge bundle.
 
 ### Fixed
 - `normalize_semantic` used the `ndarray.ptp()` method, which NumPy 2.0 removed (the repo
