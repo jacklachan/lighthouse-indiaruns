@@ -83,14 +83,19 @@ app = FastAPI(title="Lighthouse Candidate Ranker", version="1.0.0")
 _STATE: dict = {}
 
 
+def _read_json(path: str) -> dict:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def _facets_and_rubric() -> tuple[dict, np.ndarray, float | None, float | None]:
     """Load the JD rubric, facet embeddings, and population semantic bounds."""
-    rubric = json.load(open(os.path.join(ART, "jd_rubric.json"), encoding="utf-8"))
+    rubric = _read_json(os.path.join(ART, "jd_rubric.json"))
     facet_emb = np.load(os.path.join(ART, "jd_facet_emb.npy"))
     sem_lo = sem_hi = None
     meta_path = os.path.join(ART, "precompute_meta.json")
     if os.path.exists(meta_path):
-        meta = json.load(open(meta_path, encoding="utf-8"))
+        meta = _read_json(meta_path)
         sem_lo, sem_hi = meta.get("semantic_p5"), meta.get("semantic_p95")
     return rubric, facet_emb, sem_lo, sem_hi
 

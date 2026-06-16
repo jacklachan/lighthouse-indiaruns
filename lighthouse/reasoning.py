@@ -30,11 +30,8 @@ existing grounding tests are unaffected.
 
 from __future__ import annotations
 
-from datetime import date
-
 from . import features, loader
-
-REFERENCE_DATE = date(2026, 6, 6)
+from .constants import REFERENCE_DATE
 
 # representative "build" words; only surfaced if present in the candidate's text
 _EVIDENCE_WORDS = [

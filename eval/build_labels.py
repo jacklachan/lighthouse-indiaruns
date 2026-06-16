@@ -64,7 +64,8 @@ def main():
     ap.add_argument("--out", default="eval/eval_labels.json")
     args = ap.parse_args()
 
-    rubric = json.load(open("artifacts/jd_rubric.json", encoding="utf-8"))
+    with open("artifacts/jd_rubric.json", encoding="utf-8") as _f:
+        rubric = json.load(_f)
     random.seed(SEED)
 
     buckets: dict = {}
@@ -106,7 +107,8 @@ def main():
         arche_of[cid] = a
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    json.dump(labels, open(args.out, "w"), indent=2)
+    with open(args.out, "w") as _f:
+        json.dump(labels, _f, indent=2)
 
     print(f"\nLabeled {len(labels)} candidates -> {args.out}")
     print("Tier histogram:", tier_hist)

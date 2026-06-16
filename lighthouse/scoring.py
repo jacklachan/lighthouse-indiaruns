@@ -20,14 +20,10 @@ caller; everything else is computed here from the rubric + raw fields.
 
 from __future__ import annotations
 
-from datetime import date
-
 import numpy as np
 
 from . import features, gates, honeypot, loader
-
-REFERENCE_DATE = date(2026, 6, 6)
-
+from .constants import REFERENCE_DATE
 
 # ---------------------------------------------------------------------------
 # semantic fit (embedding side)

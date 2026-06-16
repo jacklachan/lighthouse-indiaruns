@@ -22,8 +22,7 @@ from __future__ import annotations
 from datetime import date
 
 from . import loader
-
-REFERENCE_DATE = date(2026, 6, 6)
+from .constants import REFERENCE_DATE
 
 
 def _months_between(d0: date, d1: date) -> int:

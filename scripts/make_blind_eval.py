@@ -57,7 +57,8 @@ def main():
     ap.add_argument("--out", default="eval/blind_eval_candidates.csv")
     args = ap.parse_args()
 
-    rubric = json.load(open("artifacts/jd_rubric.json", encoding="utf-8"))
+    with open("artifacts/jd_rubric.json", encoding="utf-8") as _f:
+        rubric = json.load(_f)
     random.seed(SEED + 7)  # different seed from the Claude label set
 
     buckets: dict = {}

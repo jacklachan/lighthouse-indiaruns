@@ -33,7 +33,8 @@ def main():
     ap.add_argument("--out", default="eval/results.md")
     args = ap.parse_args()
 
-    labels = json.load(open(args.labels, encoding="utf-8"))
+    with open(args.labels, encoding="utf-8") as _f:
+        labels = json.load(_f)
     tiers = {cid: v["tier"] for cid, v in labels.items()}
     label_ids = set(labels)
 

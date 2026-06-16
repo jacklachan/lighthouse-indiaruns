@@ -14,10 +14,10 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from . import features, loader
+from .constants import REFERENCE_DATE
 
 _MIN_DATE = date(1900, 1, 1)
-_REF_DATE = date(2026, 6, 6)
-_RECENT_CUTOFF = _REF_DATE - timedelta(days=18 * 30)
+_RECENT_CUTOFF = REFERENCE_DATE - timedelta(days=18 * 30)
 
 
 def _career_text(raw: dict) -> str:

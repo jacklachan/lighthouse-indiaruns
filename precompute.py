@@ -70,7 +70,8 @@ def main():
         logf.write(line + "\n")
         logf.flush()
 
-    rubric = json.load(open(os.path.join("artifacts", "jd_rubric.json"), encoding="utf-8"))
+    with open(os.path.join("artifacts", "jd_rubric.json"), encoding="utf-8") as _f:
+        rubric = json.load(_f)
 
     # ---- 1. blobs + ids (streamed) ----
     log(f"[1/4] Building text blobs from {args.candidates} ...")
@@ -95,7 +96,8 @@ def main():
     emb = np.zeros((n, dim), dtype=np.float32)
     start = 0
     if os.path.exists(partial) and os.path.exists(progress):
-        pj = json.load(open(progress))
+        with open(progress) as _f:
+            pj = json.load(_f)
         if pj.get("n") == n and pj.get("model") == args.model:
             saved = np.load(partial)
             k = min(len(saved), n)
@@ -122,7 +124,8 @@ def main():
             log(f"      {done:,}/{n:,}  ({rate:.0f}/s, eta {eta/60:.0f}m)")
         if (i // bs) % 50 == 0 and done < n:  # checkpoint every ~50 batches
             np.save(partial, emb[:done].astype(np.float16))
-            json.dump({"n": n, "model": args.model, "done": done}, open(progress, "w"))
+            with open(progress, "w") as _f:
+                json.dump({"n": n, "model": args.model, "done": done}, _f)
 
     emb16 = emb.astype(np.float16)
 
@@ -140,7 +143,8 @@ def main():
 
     # ---- 3. SAVE CRITICAL ARTIFACTS NOW (before the optional, riskier BM25) ----
     log("[3/4] Saving embeddings + ids + facets + meta ...")
-    json.dump(ids, open(os.path.join(out, "candidate_ids.json"), "w"))
+    with open(os.path.join(out, "candidate_ids.json"), "w") as _f:
+        json.dump(ids, _f)
     np.save(os.path.join(out, "cand_emb.npy"), emb16)
     np.save(os.path.join(out, "jd_facet_emb.npy"), facet_emb)
     meta = {
@@ -156,7 +160,8 @@ def main():
         "semantic_p5": sem_p5,
         "semantic_p95": sem_p95,
     }
-    json.dump(meta, open(os.path.join(out, "precompute_meta.json"), "w"), indent=2)
+    with open(os.path.join(out, "precompute_meta.json"), "w") as _f:
+        json.dump(meta, _f, indent=2)
     log(f"      saved cand_emb {emb16.shape} ({emb16.nbytes/1e6:.1f} MB)")
 
     # ---- 4. BM25 (optional; rank.py does not depend on it — non-fatal) ----

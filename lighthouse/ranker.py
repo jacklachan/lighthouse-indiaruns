@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 
 import numpy as np
 
@@ -20,9 +21,14 @@ from . import loader, scoring
 # ---------------------------------------------------------------------------
 
 
+def _read_json(path: str) -> Any:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def load_artifacts(art_dir: str) -> dict:
-    rubric = json.load(open(os.path.join(art_dir, "jd_rubric.json"), encoding="utf-8"))
-    ids = json.load(open(os.path.join(art_dir, "candidate_ids.json"), encoding="utf-8"))
+    rubric = _read_json(os.path.join(art_dir, "jd_rubric.json"))
+    ids = _read_json(os.path.join(art_dir, "candidate_ids.json"))
     cand_emb = np.load(os.path.join(art_dir, "cand_emb.npy"))
     facet_emb = np.load(os.path.join(art_dir, "jd_facet_emb.npy"))
     id_to_row = {cid: i for i, cid in enumerate(ids)}
@@ -30,7 +36,7 @@ def load_artifacts(art_dir: str) -> dict:
     sem_lo = sem_hi = None
     meta_path = os.path.join(art_dir, "precompute_meta.json")
     if os.path.exists(meta_path):
-        meta = json.load(open(meta_path, encoding="utf-8"))
+        meta = _read_json(meta_path)
         sem_lo, sem_hi = meta.get("semantic_p5"), meta.get("semantic_p95")
     return {
         "rubric": rubric,
@@ -64,7 +70,7 @@ def _embeddings_for(raws: list[dict], art: dict, model_name: str | None) -> np.n
 
         meta_path = os.path.join("artifacts", "precompute_meta.json")
         mn = model_name or (
-            json.load(open(meta_path))["model"]
+            _read_json(meta_path)["model"]
             if os.path.exists(meta_path)
             else "BAAI/bge-small-en-v1.5"
         )
