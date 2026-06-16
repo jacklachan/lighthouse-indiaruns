@@ -173,16 +173,20 @@ def score_candidate(
     use_gates: bool = True,
     use_honeypot: bool = True,
     use_behavior: bool = True,
+    skip_gates: set[str] | None = None,
 ) -> dict:
     """Full scoring record for one candidate (feeds ranking + reasoning).
 
     The use_* flags exist for the ablation study in eval/ (e.g. measure NDCG
-    with the gates or honeypot filter switched off)."""
+    with the gates or honeypot filter switched off). ``skip_gates`` is the
+    finer-grained Discovery hook used by the sandbox UI: a set of gate keys
+    to bypass while keeping the others. Defaults to None (all gates active),
+    so rank.py output is unchanged."""
     comps = components(raw, rubric, semantic_fit)
     base = base_score(comps, rubric, drop=drop)
 
     hp, hp_reasons = honeypot.detect(raw)
-    gate_mult, gate_reasons = gates.apply_gates(raw, rubric)
+    gate_mult, gate_reasons = gates.apply_gates(raw, rubric, skip=skip_gates)
     beh_mult, beh_facts = behavioral_modifier(raw, rubric)
 
     eff_gate = gate_mult if use_gates else 1.0

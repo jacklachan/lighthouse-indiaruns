@@ -33,6 +33,7 @@ WEB = os.path.join(HERE, "web")
 SAMPLE = os.path.join(HERE, "sample_candidates.jsonl")
 
 sys.path.insert(0, ROOT)
+from lighthouse import gates as _gates  # noqa: E402
 from lighthouse import loader, ranker, reasoning  # noqa: E402
 
 MAX_CANDIDATES = 100
@@ -43,6 +44,38 @@ COMPONENT_KEYS = (
     "experience_fit",
     "trust_skills",
 )
+GATE_KEYS = _gates.GATE_KEYS
+# Human-readable labels + short descriptions for each gate, shown in the UI.
+GATE_META: dict[str, dict[str, str]] = {
+    "non_technical_role": {
+        "label": "Non-technical role",
+        "desc": "Current title + whole history non-engineering (the keyword-stuffer trap).",
+    },
+    "services_only": {
+        "label": "Services-only career",
+        "desc": "Every role at a consulting/services firm.",
+    },
+    "location_visa": {
+        "label": "Location / visa",
+        "desc": "Outside India; no visa sponsorship.",
+    },
+    "research_only": {
+        "label": "Research-only",
+        "desc": "Strong academic signal, no production deployment.",
+    },
+    "cv_speech_only": {
+        "label": "CV / speech / robotics only",
+        "desc": "Primary domain is CV/speech/robotics, no NLP / IR signal.",
+    },
+    "langchain_only_recent": {
+        "label": "Recent LangChain only",
+        "desc": "AI experience limited to recent LLM-wrapper tooling.",
+    },
+    "title_chaser": {
+        "label": "Title-chaser",
+        "desc": "Job-hops every ~18mo while titles escalate.",
+    },
+}
 
 app = FastAPI(title="Lighthouse Candidate Ranker", version="1.0.0")
 
@@ -134,6 +167,22 @@ def _validate_weights(weights: dict) -> dict[str, float]:
     return cleaned
 
 
+def _validate_skip_gates(skip: object) -> set[str]:
+    """Sanitize the caller-supplied list of gates to bypass."""
+    if skip is None:
+        return set()
+    if not isinstance(skip, list):
+        raise HTTPException(status_code=400, detail="skip_gates must be a list")
+    cleaned: set[str] = set()
+    for k in skip:
+        if not isinstance(k, str):
+            raise HTTPException(status_code=400, detail="skip_gates entries must be strings")
+        if k not in GATE_KEYS:
+            raise HTTPException(status_code=400, detail=f"unknown gate key: {k}")
+        cleaned.add(k)
+    return cleaned
+
+
 def _reweight_records(records: list[dict], weights: dict[str, float]) -> None:
     """In-place: recompute base + final per record using custom component weights.
 
@@ -152,20 +201,26 @@ def _reweight_records(records: list[dict], weights: dict[str, float]) -> None:
             r["final_score"] = round(base * r["gate_mult"] * r["behavior_mult"], 6)
 
 
-def _rank(raws: list[dict], weights: dict[str, float] | None = None) -> dict:
+def _rank(
+    raws: list[dict],
+    weights: dict[str, float] | None = None,
+    skip_gates: set[str] | None = None,
+) -> dict:
     """Run the full ranker and shape the result for the frontend.
 
     Mirrors ``app/app.py``: score -> normalize by max (round 6) -> rank -> rows +
     summary + top-candidate breakdown.
 
-    When ``weights`` is supplied, the JD-default component weights are replaced
-    by the caller's overrides (post-scoring re-weighting; lighthouse/ unchanged).
+    ``weights`` overrides the JD-default component weights for this request.
+    ``skip_gates`` is a set of gate keys to bypass (Discovery UI; lets a
+    recruiter ask "what if I'm willing to sponsor a visa?" without editing
+    the rubric).
     """
     st = _state()
     rubric = st["rubric"]
     art = st["art"]
 
-    records = ranker.score_all(raws, art)
+    records = ranker.score_all(raws, art, skip_gates=skip_gates)
     if weights is not None:
         _reweight_records(records, weights)
     mx = max((r["final_score"] for r in records), default=0.0)
@@ -228,6 +283,7 @@ def _rank(raws: list[dict], weights: dict[str, float] | None = None) -> dict:
         "breakdown": breakdown,
         "weights": effective_weights,
         "default_weights": _default_weights(rubric),
+        "skip_gates": sorted(skip_gates) if skip_gates else [],
     }
 
 
@@ -235,6 +291,7 @@ class RankRequest(BaseModel):
     jsonl: str | None = None
     use_sample: bool = False
     weights: dict[str, float] | None = None
+    skip_gates: list[str] | None = None
 
 
 @app.get("/api/health")
@@ -255,6 +312,17 @@ def weights_endpoint() -> dict:
     return {"default_weights": _default_weights(_state()["rubric"])}
 
 
+@app.get("/api/gates")
+def gates_endpoint() -> dict:
+    """Catalog of hard-negative gates the sandbox UI can toggle off."""
+    return {
+        "gates": [
+            {"key": k, "label": GATE_META[k]["label"], "desc": GATE_META[k]["desc"]}
+            for k in sorted(GATE_KEYS)
+        ]
+    }
+
+
 @app.post("/api/rank")
 def rank_endpoint(req: RankRequest) -> dict:
     if req.use_sample:
@@ -270,8 +338,9 @@ def rank_endpoint(req: RankRequest) -> dict:
             detail="No valid candidates found. Provide JSONL — one JSON object per line.",
         )
     weights = _validate_weights(req.weights) if req.weights is not None else None
+    skip_gates = _validate_skip_gates(req.skip_gates) if req.skip_gates else set()
     try:
-        return _rank(raws, weights=weights)
+        return _rank(raws, weights=weights, skip_gates=skip_gates or None)
     except HTTPException:
         raise
     except Exception as e:  # surface a clean message instead of a 500 stack

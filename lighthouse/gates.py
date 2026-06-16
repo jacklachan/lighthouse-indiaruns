@@ -166,24 +166,36 @@ def gate_non_technical_role(raw: dict, rubric: dict, text: str) -> tuple[float, 
     return 1.0, ""
 
 
-GATES = [
-    gate_non_technical_role,
-    gate_services_only,
-    gate_location_visa,
-    gate_research_only,
-    gate_cv_speech_only,
-    gate_langchain_only_recent,
-    gate_title_chaser,
+GATES: list[tuple[str, object]] = [
+    ("non_technical_role", gate_non_technical_role),
+    ("services_only", gate_services_only),
+    ("location_visa", gate_location_visa),
+    ("research_only", gate_research_only),
+    ("cv_speech_only", gate_cv_speech_only),
+    ("langchain_only_recent", gate_langchain_only_recent),
+    ("title_chaser", gate_title_chaser),
 ]
 
+GATE_KEYS: set[str] = {key for key, _ in GATES}
 
-def apply_gates(raw: dict, rubric: dict) -> tuple[float, list[str]]:
-    """Return (combined_multiplier, [fired reasons])."""
+
+def apply_gates(raw: dict, rubric: dict, skip: set[str] | None = None) -> tuple[float, list[str]]:
+    """Return (combined_multiplier, [fired reasons]).
+
+    ``skip`` is an optional set of gate keys to bypass — used by the Discovery
+    UI so a recruiter can ask "what does the ranking look like if I'm willing
+    to sponsor a visa?" without editing the rubric. When ``skip`` is None or
+    empty the behavior is identical to the previous all-on path, so rank.py
+    output is unchanged.
+    """
     text = _career_text(raw)
     mult = 1.0
     reasons: list[str] = []
-    for fn in GATES:
-        m, reason = fn(raw, rubric, text)
+    skip = skip or set()
+    for key, fn in GATES:
+        if key in skip:
+            continue
+        m, reason = fn(raw, rubric, text)  # type: ignore[operator]
         if m < 1.0:
             mult *= m
             reasons.append(reason)

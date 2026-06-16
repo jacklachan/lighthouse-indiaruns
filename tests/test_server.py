@@ -110,3 +110,39 @@ def test_rank_rejects_zero_sum_weights() -> None:
         },
     )
     assert r.status_code == 400
+
+
+def test_gates_endpoint_returns_catalog() -> None:
+    r = client.get("/api/gates")
+    assert r.status_code == 200
+    body = r.json()
+    assert "gates" in body
+    keys = {g["key"] for g in body["gates"]}
+    assert {
+        "non_technical_role",
+        "services_only",
+        "location_visa",
+        "research_only",
+        "cv_speech_only",
+        "langchain_only_recent",
+        "title_chaser",
+    } <= keys
+    for g in body["gates"]:
+        assert g["label"] and g["desc"]
+
+
+def test_rank_rejects_unknown_gate_key() -> None:
+    r = client.post(
+        "/api/rank",
+        json={"use_sample": True, "skip_gates": ["location_visa", "bogus"]},
+    )
+    assert r.status_code == 400
+    assert "unknown" in r.json()["detail"].lower()
+
+
+def test_rank_rejects_skip_gates_not_a_list() -> None:
+    r = client.post(
+        "/api/rank",
+        json={"use_sample": True, "skip_gates": "location_visa"},
+    )
+    assert r.status_code in (400, 422)

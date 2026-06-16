@@ -88,6 +88,7 @@ def score_all(
     use_gates: bool = True,
     use_honeypot: bool = True,
     use_behavior: bool = True,
+    skip_gates: set[str] | None = None,
 ) -> list[dict]:
     rubric = art["rubric"]
     emb = _embeddings_for(raws, art, model_name)
@@ -104,6 +105,7 @@ def score_all(
                 use_gates=use_gates,
                 use_honeypot=use_honeypot,
                 use_behavior=use_behavior,
+                skip_gates=skip_gates,
             )
         )
     return records

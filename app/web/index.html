@@ -161,14 +161,34 @@
           <input type="file" id="file-input" accept=".jsonl,.json,.txt" hidden />
         </div>
 
-        <details class="weights-panel" id="weights-panel">
+        <details class="weights-panel" id="weights-panel" open>
           <summary>
             <span>🎚️ Tune the JD rubric <span class="pill-soft" id="weights-status">JD defaults</span></span>
             <span class="chev">▾</span>
           </summary>
           <div class="weights-body">
-            <p class="note">Each component's weight in the base score. Move a slider to re-rank live against your own priorities — e.g. crank <em>experience_fit</em> down to surface mid-career fits, or lift <em>career_evidence</em> to demand built-it-in-prod proof.</p>
-            <div id="sliders"></div>
+            <p class="note">Live Discovery layer over the same engine. Move a slider, flip a gate, or pick a preset — every change re-ranks against your own priorities (the rubric on disk is untouched).</p>
+
+            <div class="preset-row" id="presets">
+              <span class="preset-label">Presets:</span>
+              <button class="chip" data-preset="default">⚖ JD defaults</button>
+              <button class="chip" data-preset="remote">🌍 Remote-hire</button>
+              <button class="chip" data-preset="junior">🌱 Junior-friendly</button>
+              <button class="chip" data-preset="research">🧪 Research-heavy</button>
+              <button class="chip" data-preset="services_ok">🤝 Services OK</button>
+            </div>
+
+            <div class="weights-grid">
+              <div class="weights-col">
+                <div class="col-title">Component weights</div>
+                <div id="sliders"></div>
+              </div>
+              <div class="weights-col">
+                <div class="col-title">Hard-negative gates</div>
+                <div id="gates"></div>
+              </div>
+            </div>
+
             <div class="weights-actions">
               <button class="btn btn-ghost" id="reset-weights">↺ Reset to JD defaults</button>
               <span class="note" id="weights-sum">Σ —</span>

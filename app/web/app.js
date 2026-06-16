@@ -93,7 +93,42 @@
     lastRows: null,
     defaultWeights: null,
     weights: null,
+    gates: [],          // [{key, label, desc}]
+    skipGates: {},      // {key: bool}  true = disabled
     lastRankBody: null
+  };
+
+  /* Hand-tuned presets — each one snaps both the weight sliders and the
+     gate toggles. Designed for the demo: a judge can see the ranking shift
+     between "JD as written" and "I'd hire remotely / from services / etc."
+     in one click. weights values reflect the JD defaults so the deltas are
+     readable; gates list keys to BYPASS. */
+  var PRESETS = {
+    default: {
+      label: "JD defaults",
+      weights: { semantic_fit: 0.22, role_coherence: 0.26, career_evidence: 0.24, experience_fit: 0.10, trust_skills: 0.18 },
+      skip: []
+    },
+    remote: {
+      label: "Remote-hire",
+      weights: { semantic_fit: 0.22, role_coherence: 0.26, career_evidence: 0.26, experience_fit: 0.10, trust_skills: 0.16 },
+      skip: ["location_visa"]
+    },
+    junior: {
+      label: "Junior-friendly",
+      weights: { semantic_fit: 0.26, role_coherence: 0.22, career_evidence: 0.20, experience_fit: 0.04, trust_skills: 0.28 },
+      skip: ["title_chaser"]
+    },
+    research: {
+      label: "Research-heavy",
+      weights: { semantic_fit: 0.28, role_coherence: 0.22, career_evidence: 0.18, experience_fit: 0.10, trust_skills: 0.22 },
+      skip: ["research_only"]
+    },
+    services_ok: {
+      label: "Services OK",
+      weights: { semantic_fit: 0.22, role_coherence: 0.26, career_evidence: 0.24, experience_fit: 0.10, trust_skills: 0.18 },
+      skip: ["services_only"]
+    }
   };
 
   function setMode(mode) {
@@ -165,6 +200,8 @@
     if (state.weights && !weightsEqualDefaults(state.weights, state.defaultWeights)) {
       body.weights = state.weights;
     }
+    var skipList = activeSkipGates();
+    if (skipList.length) body.skip_gates = skipList;
     state.lastRankBody = body;
     setLoading(true, opts.quiet);
     $("#results").classList.remove("show");
@@ -320,12 +357,18 @@
     return true;
   }
 
+  function activeSkipGates() {
+    return Object.keys(state.skipGates).filter(function (k) { return state.skipGates[k]; });
+  }
+
   function refreshWeightsStatus() {
     var sum = 0;
     var keys = Object.keys(state.weights || {});
     keys.forEach(function (k) { sum += state.weights[k]; });
-    $("#weights-sum").textContent = "Σ " + sum.toFixed(3) + " (auto-normalized at scoring)";
-    var modified = !weightsEqualDefaults(state.weights, state.defaultWeights);
+    var skipCount = activeSkipGates().length;
+    var skipBit = skipCount ? " · " + skipCount + " gate" + (skipCount === 1 ? "" : "s") + " off" : "";
+    $("#weights-sum").textContent = "Σ " + sum.toFixed(3) + " (auto-normalized at scoring)" + skipBit;
+    var modified = !weightsEqualDefaults(state.weights, state.defaultWeights) || skipCount > 0;
     var pill = $("#weights-status");
     pill.textContent = modified ? "custom" : "JD defaults";
     pill.classList.toggle("on", modified);
@@ -352,6 +395,7 @@
         var v = parseFloat(inp.value);
         state.weights[k] = roundW(v);
         $('[data-val="' + k + '"]').textContent = v.toFixed(2);
+        highlightPreset(null);   // manual edit = no preset active
         refreshWeightsStatus();
         scheduleRerank();
       });
@@ -366,24 +410,83 @@
   }
 
   function resetWeights() {
-    if (!state.defaultWeights) return;
-    state.weights = Object.assign({}, state.defaultWeights);
+    applyPreset("default");
+  }
+
+  function renderGates() {
+    var host = $("#gates");
+    host.innerHTML = "";
+    state.gates.forEach(function (g) {
+      var off = !!state.skipGates[g.key];
+      var row = document.createElement("label");
+      row.className = "gate-row" + (off ? " off" : "");
+      row.setAttribute("data-key", g.key);
+      row.innerHTML =
+        '<div class="gate-text">' +
+          '<div class="gate-label">' + esc(g.label) + '</div>' +
+          '<div class="gate-desc">' + esc(g.desc) + '</div>' +
+        '</div>' +
+        '<span class="toggle" role="switch" aria-checked="' + (!off) + '">' +
+          '<input type="checkbox" data-key="' + esc(g.key) + '" ' + (off ? "" : "checked") + ' />' +
+          '<span class="toggle-track"><span class="toggle-thumb"></span></span>' +
+        '</span>';
+      host.appendChild(row);
+    });
+    $$("#gates input[type=checkbox]").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        var k = cb.getAttribute("data-key");
+        state.skipGates[k] = !cb.checked;
+        cb.closest(".gate-row").classList.toggle("off", !cb.checked);
+        refreshWeightsStatus();
+        scheduleRerank();
+      });
+    });
+  }
+
+  function applyPreset(name) {
+    var p = PRESETS[name];
+    if (!p) return;
+    state.weights = Object.assign({}, p.weights);
+    state.skipGates = {};
+    p.skip.forEach(function (k) { state.skipGates[k] = true; });
     renderSliders();
+    renderGates();
     refreshWeightsStatus();
+    highlightPreset(name);
     scheduleRerank();
   }
 
+  function highlightPreset(name) {
+    $$("#presets .chip").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-preset") === name);
+    });
+  }
+
+  function initPresets() {
+    $$("#presets .chip").forEach(function (b) {
+      b.addEventListener("click", function () { applyPreset(b.getAttribute("data-preset")); });
+    });
+  }
+
   function initWeights() {
-    fetch("/api/weights").then(function (r) { return r.json(); }).then(function (data) {
-      state.defaultWeights = data.default_weights || {};
+    Promise.all([
+      fetch("/api/weights").then(function (r) { return r.json(); }),
+      fetch("/api/gates").then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      state.defaultWeights = results[0].default_weights || {};
       state.weights = Object.assign({}, state.defaultWeights);
+      state.gates = results[1].gates || [];
       renderSliders();
+      renderGates();
       refreshWeightsStatus();
+      highlightPreset("default");
     }).catch(function () {
-      // network/health issue — leave sliders empty rather than crash the page
+      // network/health issue — leave panels empty rather than crash the page
       $("#sliders").innerHTML = '<p class="note">Could not load default weights.</p>';
+      $("#gates").innerHTML = '<p class="note">Could not load gate catalog.</p>';
     });
     $("#reset-weights").addEventListener("click", resetWeights);
+    initPresets();
   }
 
   /* ------------------------------------------------------------------ */
