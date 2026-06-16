@@ -42,7 +42,7 @@ precompute = [
     "torch==2.5.1",
     "rank-bm25==0.2.2",
 ]
-app = ["streamlit==1.40.2"]
+app = ["fastapi==0.115.6", "uvicorn[standard]==0.34.0", "sentence-transformers==3.3.1", "torch==2.5.1"]
 deck = ["python-pptx==1.0.2"]
 dev = [
     "pytest==8.3.4",

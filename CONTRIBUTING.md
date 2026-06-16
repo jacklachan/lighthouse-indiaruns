@@ -22,7 +22,7 @@ To rebuild artifacts or run the live app you also need the optional extras:
 
 ```bash
 pip install -e ".[precompute]"   # torch + sentence-transformers + bm25
-pip install -e ".[app]"          # streamlit
+pip install -e ".[app]"          # fastapi + uvicorn + encoder (HF Space demo)
 ```
 
 ## Quality gates (run before every commit)

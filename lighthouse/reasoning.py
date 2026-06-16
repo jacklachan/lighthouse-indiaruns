@@ -10,6 +10,22 @@ For each top-100 candidate we compose a 1-2 sentence justification that:
 Grounding guarantee: every skill or employer surfaced is pulled directly from
 the candidate's own `skills` / `career_history` / `profile`, never invented.
 `grounded_terms()` exposes exactly what was used so tests can verify it.
+
+Contrastive / confidence overlays
+---------------------------------
+``generate(..., context=...)`` accepts an optional context dict for two
+overlays that the brief asks for ("explainable") but a single per-candidate
+template can't deliver:
+
+* ``dominant_component`` — surfaces which of the five components actually
+  drove this candidate's score, computed from the (weight × value)
+  contribution.
+* contrastive vs. a peer — when the caller passes a ``neighbor`` record (the
+  candidate that ranked immediately above), we name the single largest
+  component delta as the reason this one slots above / below.
+
+Both are additive: when ``context`` is None the output is unchanged, so the
+existing grounding tests are unaffected.
 """
 
 from __future__ import annotations
@@ -169,8 +185,92 @@ def _concern_clause(f: dict, record: dict, band: str) -> str:
     return ""
 
 
-def generate(raw: dict, rubric: dict, record: dict) -> str:
-    """Compose the 1-2 sentence grounded reasoning for one ranked candidate."""
+_COMPONENT_LABEL = {
+    "semantic_fit": "semantic fit",
+    "role_coherence": "role coherence",
+    "career_evidence": "career evidence",
+    "experience_fit": "experience fit",
+    "trust_skills": "trust-weighted skills",
+}
+
+
+def _component_weights(rubric: dict) -> dict[str, float]:
+    return {
+        k: float(v) for k, v in rubric.get("component_weights", {}).items() if k in _COMPONENT_LABEL
+    }
+
+
+def _dominant_component(comps: dict, weights: dict) -> tuple[str, float] | None:
+    """Return (key, weighted_contribution) of the component that drove the score,
+    or None if no component is distinctly ahead. Distinct = strictly larger
+    contribution than every other component by at least 5% of the leader."""
+    contribs = [(k, weights.get(k, 0.0) * comps.get(k, 0.0)) for k in _COMPONENT_LABEL]
+    contribs.sort(key=lambda x: x[1], reverse=True)
+    if len(contribs) < 2 or contribs[0][1] <= 0:
+        return None
+    leader, second = contribs[0], contribs[1]
+    if leader[1] - second[1] < 0.05 * leader[1]:
+        return None
+    return leader
+
+
+def _confidence_clause(comps: dict, rubric: dict, record: dict, band: str) -> str:
+    """Name the component that did the most work, with a value to anchor it."""
+    if record.get("honeypot"):
+        return ""
+    weights = _component_weights(rubric)
+    dom = _dominant_component(comps, weights)
+    if not dom:
+        return ""
+    key, _ = dom
+    val = comps.get(key, 0.0)
+    # Only worth surfacing when the dominant component is actually strong.
+    if val < 0.55:
+        return ""
+    label = _COMPONENT_LABEL[key]
+    if band == "top":
+        return f" Lifted by {label} ({val:.2f})."
+    return f" Score driven by {label} ({val:.2f})."
+
+
+def _contrastive_clause(record: dict, context: dict) -> str:
+    """One-line ' vs. peer' grounded in the per-component delta."""
+    neighbor = context.get("neighbor")
+    if not isinstance(neighbor, dict):
+        return ""
+    n_id = neighbor.get("candidate_id")
+    n_rank = neighbor.get("rank")
+    if not n_id or n_rank is None:
+        return ""
+
+    my_comps = record.get("components", {})
+    n_comps = neighbor.get("components", {})
+    if not n_comps:
+        return ""
+
+    # Largest absolute per-component gap that points the right way (this
+    # candidate is above neighbor when neighbor is ranked below it).
+    direction = 1 if record.get("rank", 999) < n_rank else -1
+    diffs = []
+    for k in _COMPONENT_LABEL:
+        d = (my_comps.get(k, 0.0) - n_comps.get(k, 0.0)) * direction
+        diffs.append((k, d, my_comps.get(k, 0.0), n_comps.get(k, 0.0)))
+    diffs.sort(key=lambda x: x[1], reverse=True)
+    k, gap, mine, theirs = diffs[0]
+    if gap < 0.08:
+        return ""  # too close to call honestly
+    label = _COMPONENT_LABEL[k]
+    verb = "Edges" if direction > 0 else "Trails"
+    return f" {verb} {n_id} (rank {n_rank}) on {label} ({mine:.2f} vs {theirs:.2f})."
+
+
+def generate(raw: dict, rubric: dict, record: dict, context: dict | None = None) -> str:
+    """Compose the grounded reasoning for one ranked candidate.
+
+    ``context`` is optional; when provided it may contain a ``neighbor``
+    record (the candidate immediately above this one) for a contrastive
+    overlay. The base output is unchanged when ``context`` is ``None``.
+    """
     rank = record.get("rank", 999)
     band = "top" if rank <= 10 else ("mid" if rank <= 50 else "low")
     f = extract_facts(raw, rubric, record)
@@ -180,5 +280,9 @@ def generate(raw: dict, rubric: dict, record: dict) -> str:
 
     if band == "low" and not record.get("gate_reasons") and not record.get("honeypot"):
         text += " Adjacent fit included near the cutoff."
+
+    if context is not None:
+        text += _confidence_clause(comps, rubric, record, band)
+        text += _contrastive_clause(record, context)
 
     return " ".join(text.split()).strip()

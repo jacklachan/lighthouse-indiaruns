@@ -8,7 +8,7 @@ Everything below is built and in this repo. This is the order to submit.
 pip install -r requirements.txt
 python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv   # ~45 s, CPU
 python validate_submission.py submission.csv                                  # "Submission is valid."
-pytest -q                                                                     # 36 passed
+pytest -q                                                                     # 63 passed
 ```
 
 ## 1. Portal form (the upload page)
@@ -31,7 +31,7 @@ pytest -q                                                                     # 
 - **Team name:** UM
 - **Primary contact:** L Mohit Jain · mohitlalith07@gmail.com · +91-8660556007
 - **Team members:** L Mohit Jain, Utkarsh Singh Yadav (usy.joseph@gmail.com)
-- **Sandbox / demo link:** `https://huggingface.co/spaces/jacklachan/lighthouse` (Docker Space, RUNNING)
+- **Sandbox / demo link:** `https://huggingface.co/spaces/Auenchanters/lighthouse` (Docker Space, RUNNING)
 - **AI tools declared:** **Claude** — *keep this honest.* Claude was used offline for JD→rubric
   parsing + eval labeling + as a coding assistant; **no candidate data hit any API at rank-time**.
   (Declared AI use is *not* penalized; a declaration that contradicts the Stage-5 interview is.)

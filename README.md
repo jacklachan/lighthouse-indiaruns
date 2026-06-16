@@ -17,6 +17,26 @@ keywords.
 
 ---
 
+## Headline evidence (label-independent — no trust in our labels required)
+
+These three facts hold without believing any tier we authored. They are the strongest
+signal in the submission; the metric tables in `eval/results.md` come **after**.
+
+- **0 honeypots in the top-100** (independently audited over the full 100K; the dataset
+  ships ~80 such impossible profiles, DQ threshold is >10%).
+- **100/100 of the top-100 hold an AI/ML/IR/DS/Search/NLP-aligned title; 0 are
+  non-technical.** The provided `sample_submission` (keyword count) puts HR Managers and
+  Accountants at #1–20 — the exact trap the JD warns about.
+- **Trap resistance:** the keyword baseline puts **13/32 keyword-stuffers** in its top-25;
+  Lighthouse admits **0**. The plain-language Tier-5 `CAND_0000031` ranks **#1**.
+
+Self-labeled NDCG/MAP numbers (composite **0.998 vs 0.553** baseline) live in
+[`eval/results.md`](eval/results.md) §2 — read them as **internal consistency**, not
+absolute accuracy. The *gap* to the baseline and the ablation deltas are the meaningful
+signal there, not the saturated absolute.
+
+---
+
 ## How this maps to the brief
 
 A fast index from each thing the challenge evaluates to where this repo satisfies it.
@@ -26,12 +46,13 @@ A fast index from each thing the challenge evaluates to where this repo satisfie
 | Top-100 ranking from the 100K pool | `rank.py` → `submission.csv` (4 columns, validator-clean) |
 | Honeypot avoidance (>10% in top-100 = DQ) | `lighthouse/honeypot.py` explainable filter — **0 honeypots** in the top-100, audited over the full 100K (`eval/results.md` §1) |
 | Resisting keyword-stuffers & non-fits | `role_coherence` + `career_evidence` + JD-derived gates (`lighthouse/scoring.py`, `lighthouse/gates.py`); trap-resistance table in `eval/results.md` §1 |
-| Ranking quality (NDCG@10/50, MAP, P@10) | `lighthouse/metrics.py`; composite **0.998 vs 0.553** baseline (`eval/results.md` §2) |
+| Ranking quality (label-independent) | **0 honeypots** in top-100; **100/100** AI/ML-aligned titles; **0/32** keyword-stuffers admitted vs baseline's **13/32** (`eval/results.md` §1) |
+| Ranking quality (NDCG@10/50, MAP, P@10) | `lighthouse/metrics.py`; directional composite vs keyword baseline (`eval/results.md` §2 — read as gap, not absolute) |
 | Grounded, explainable reasoning | `lighthouse/reasoning.py` — every claim grounded in the profile; `tests/test_reasoning.py` |
 | CPU-only, no-network, < 5 min rank | `rank.py` imports only numpy/pandas/pyyaml (`requirements.txt`); declared in `submission_metadata.yaml` |
 | Reproducibility & determinism | seeded (`SEED = 1729`), committed artifacts, `precompute.py`, and CI |
 | Evaluation rigor (no circularity) | self-labeled **and** a blind independent-label harness (`eval/blind_compare.py`) |
-| Code quality & testing | 52 tests + ruff/black/mypy + an 85% coverage floor, all enforced in CI (`.github/workflows/ci.yml`) |
+| Code quality & testing | 63 tests + ruff/black/mypy + an 85% coverage floor, all enforced in CI (`.github/workflows/ci.yml`) |
 
 ---
 
@@ -114,7 +135,7 @@ python scripts/make_blind_eval.py && python eval/blind_compare.py  # independent
 ## Tests & quality gates
 
 ```bash
-pytest -q                        # 52 tests: honeypot detection, gates, scoring + the
+pytest -q                        # 63 tests: honeypot detection, gates, scoring + the
                                  # normalize_semantic regression, loader robustness,
                                  # reasoning grounding, metrics, tie-break, CSV validity
 pytest -q --cov=lighthouse       # 86% coverage on the rank-time package (CI floor: 85%)

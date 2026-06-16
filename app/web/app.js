@@ -86,7 +86,15 @@
   /* ------------------------------------------------------------------ *
    *  Tool: input mode, upload, ranking
    * ------------------------------------------------------------------ */
-  var state = { mode: "sample", fileText: null, fileName: null, lastRows: null };
+  var state = {
+    mode: "sample",
+    fileText: null,
+    fileName: null,
+    lastRows: null,
+    defaultWeights: null,
+    weights: null,
+    lastRankBody: null
+  };
 
   function setMode(mode) {
     state.mode = mode;
@@ -137,14 +145,15 @@
   }
   function clearError() { $("#error").classList.remove("show"); }
 
-  function setLoading(on) {
-    $("#loading").classList.toggle("show", on);
+  function setLoading(on, quiet) {
+    $("#loading").classList.toggle("show", on && !quiet);
     var btn = $("#rank-btn");
     btn.disabled = on;
     btn.textContent = on ? "Sweeping…" : "🔦 Rank candidates";
   }
 
-  function rank() {
+  function rank(opts) {
+    opts = opts || {};
     clearError();
     var body;
     if (state.mode === "upload") {
@@ -153,7 +162,11 @@
     } else {
       body = { use_sample: true };
     }
-    setLoading(true);
+    if (state.weights && !weightsEqualDefaults(state.weights, state.defaultWeights)) {
+      body.weights = state.weights;
+    }
+    state.lastRankBody = body;
+    setLoading(true, opts.quiet);
     $("#results").classList.remove("show");
 
     fetch("/api/rank", {
@@ -293,6 +306,86 @@
     URL.revokeObjectURL(url);
   }
 
+  /* ------------------------------------------------------------------ *
+   *  JD-weight sliders (Discovery: re-rank against your own priorities)
+   * ------------------------------------------------------------------ */
+  function roundW(v) { return Math.round(v * 1000) / 1000; }
+
+  function weightsEqualDefaults(a, b) {
+    if (!a || !b) return true;
+    var keys = Object.keys(b);
+    for (var i = 0; i < keys.length; i++) {
+      if (Math.abs((a[keys[i]] || 0) - (b[keys[i]] || 0)) > 1e-6) return false;
+    }
+    return true;
+  }
+
+  function refreshWeightsStatus() {
+    var sum = 0;
+    var keys = Object.keys(state.weights || {});
+    keys.forEach(function (k) { sum += state.weights[k]; });
+    $("#weights-sum").textContent = "Σ " + sum.toFixed(3) + " (auto-normalized at scoring)";
+    var modified = !weightsEqualDefaults(state.weights, state.defaultWeights);
+    var pill = $("#weights-status");
+    pill.textContent = modified ? "custom" : "JD defaults";
+    pill.classList.toggle("on", modified);
+  }
+
+  function renderSliders() {
+    var host = $("#sliders");
+    host.innerHTML = "";
+    Object.keys(COMP_LABELS).forEach(function (k) {
+      var v = state.weights[k] != null ? state.weights[k] : 0;
+      var row = document.createElement("div");
+      row.className = "slider-row";
+      row.innerHTML =
+        '<div class="slider-head">' +
+          '<span class="slider-label">' + COMP_LABELS[k] + '</span>' +
+          '<span class="slider-val" data-val="' + k + '">' + v.toFixed(2) + '</span>' +
+        '</div>' +
+        '<input type="range" min="0" max="0.5" step="0.01" value="' + v + '" data-key="' + k + '" />';
+      host.appendChild(row);
+    });
+    $$("#sliders input[type=range]").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var k = inp.getAttribute("data-key");
+        var v = parseFloat(inp.value);
+        state.weights[k] = roundW(v);
+        $('[data-val="' + k + '"]').textContent = v.toFixed(2);
+        refreshWeightsStatus();
+        scheduleRerank();
+      });
+    });
+  }
+
+  var rerankTimer = null;
+  function scheduleRerank() {
+    if (!state.lastRankBody) return; // user hasn't ranked yet — nothing to re-rank
+    clearTimeout(rerankTimer);
+    rerankTimer = setTimeout(function () { rank({ quiet: true }); }, 320);
+  }
+
+  function resetWeights() {
+    if (!state.defaultWeights) return;
+    state.weights = Object.assign({}, state.defaultWeights);
+    renderSliders();
+    refreshWeightsStatus();
+    scheduleRerank();
+  }
+
+  function initWeights() {
+    fetch("/api/weights").then(function (r) { return r.json(); }).then(function (data) {
+      state.defaultWeights = data.default_weights || {};
+      state.weights = Object.assign({}, state.defaultWeights);
+      renderSliders();
+      refreshWeightsStatus();
+    }).catch(function () {
+      // network/health issue — leave sliders empty rather than crash the page
+      $("#sliders").innerHTML = '<p class="note">Could not load default weights.</p>';
+    });
+    $("#reset-weights").addEventListener("click", resetWeights);
+  }
+
   /* ------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", function () {
     initBeam();
@@ -301,7 +394,8 @@
     initModeToggle();
     initUpload();
     setMode("sample");
-    $("#rank-btn").addEventListener("click", rank);
+    initWeights();
+    $("#rank-btn").addEventListener("click", function () { rank(); });
     $("#download-btn").addEventListener("click", downloadCsv);
   });
 })();

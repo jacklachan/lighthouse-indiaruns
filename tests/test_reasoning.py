@@ -100,6 +100,45 @@ def test_rank_consistency_concern_for_gated(rubric, sample_candidates):
     assert "Concern" in text or "relocate" in text.lower()
 
 
+def test_context_is_additive(rubric, sample_candidates):
+    """The context overlay never removes or replaces the base reasoning — it
+    only appends. Ensures rank.py (which calls without context) keeps producing
+    byte-identical submission.csv rows."""
+    items = list(sample_candidates.items())
+    for i, (_cid, raw) in enumerate(items[:5]):
+        rec = _record(raw, rubric, rank=i + 1)
+        base = reasoning.generate(raw, rubric, rec)
+        neighbor = _record(items[(i + 1) % len(items)][1], rubric, rank=max(1, i))
+        with_ctx = reasoning.generate(raw, rubric, rec, context={"neighbor": neighbor})
+        assert with_ctx.startswith(base)
+
+
+def test_contrastive_clause_names_real_peer(rubric, sample_candidates):
+    """When a contrastive clause fires it must reference the neighbor's real
+    candidate_id and one of the five component labels — nothing invented."""
+    component_labels = {
+        "semantic fit",
+        "role coherence",
+        "career evidence",
+        "experience fit",
+        "trust-weighted skills",
+    }
+    items = list(sample_candidates.items())
+    saw_clause = False
+    for i in range(1, min(len(items), 10)):
+        cid, raw = items[i]
+        neighbor_id, neighbor_raw = items[i - 1]
+        rec = _record(raw, rubric, rank=i + 1)
+        neighbor = _record(neighbor_raw, rubric, rank=i)
+        text = reasoning.generate(raw, rubric, rec, context={"neighbor": neighbor})
+        if "rank " in text and neighbor_id in text:
+            saw_clause = True
+            assert any(
+                lbl in text for lbl in component_labels
+            ), f"{cid}: contrastive clause references unknown component in: {text}"
+    assert saw_clause, "expected at least one contrastive clause to fire across the sample"
+
+
 def test_low_rank_filler_tone(rubric):
     # a weak candidate at rank 95 should read as adjacent/filler, not glowing
     c = make_candidate(

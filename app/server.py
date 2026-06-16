@@ -36,6 +36,13 @@ sys.path.insert(0, ROOT)
 from lighthouse import loader, ranker, reasoning  # noqa: E402
 
 MAX_CANDIDATES = 100
+COMPONENT_KEYS = (
+    "semantic_fit",
+    "role_coherence",
+    "career_evidence",
+    "experience_fit",
+    "trust_skills",
+)
 
 app = FastAPI(title="Lighthouse Candidate Ranker", version="1.0.0")
 
@@ -99,17 +106,68 @@ def _parse_jsonl(text: str) -> list[dict]:
     return raws
 
 
-def _rank(raws: list[dict]) -> dict:
+def _default_weights(rubric: dict) -> dict[str, float]:
+    return {
+        k: float(v) for k, v in rubric.get("component_weights", {}).items() if k in COMPONENT_KEYS
+    }
+
+
+def _validate_weights(weights: dict) -> dict[str, float]:
+    """Return a sanitized weights dict or raise 400. Defaults missing keys to 0."""
+    if not isinstance(weights, dict):
+        raise HTTPException(status_code=400, detail="weights must be an object")
+    cleaned: dict[str, float] = {}
+    for k, v in weights.items():
+        if k not in COMPONENT_KEYS:
+            raise HTTPException(status_code=400, detail=f"unknown weight key: {k}")
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail=f"weight {k} not numeric") from None
+        if f < 0:
+            raise HTTPException(status_code=400, detail=f"weight {k} must be >= 0")
+        cleaned[k] = f
+    for k in COMPONENT_KEYS:
+        cleaned.setdefault(k, 0.0)
+    if sum(cleaned.values()) <= 0:
+        raise HTTPException(status_code=400, detail="weights must sum to > 0")
+    return cleaned
+
+
+def _reweight_records(records: list[dict], weights: dict[str, float]) -> None:
+    """In-place: recompute base + final per record using custom component weights.
+
+    Preserves the existing gate_mult, behavior_mult, honeypot zeroing — only the
+    weighted sum of components is overridden. The ranker package is not touched.
+    """
+    total_w = sum(weights.values())
+    for r in records:
+        comps = r["components"]
+        s = sum(comps[k] * weights[k] for k in COMPONENT_KEYS)
+        base = s / total_w
+        r["base"] = round(base, 4)
+        if r.get("honeypot"):
+            r["final_score"] = 0.0
+        else:
+            r["final_score"] = round(base * r["gate_mult"] * r["behavior_mult"], 6)
+
+
+def _rank(raws: list[dict], weights: dict[str, float] | None = None) -> dict:
     """Run the full ranker and shape the result for the frontend.
 
     Mirrors ``app/app.py``: score -> normalize by max (round 6) -> rank -> rows +
     summary + top-candidate breakdown.
+
+    When ``weights`` is supplied, the JD-default component weights are replaced
+    by the caller's overrides (post-scoring re-weighting; lighthouse/ unchanged).
     """
     st = _state()
     rubric = st["rubric"]
     art = st["art"]
 
     records = ranker.score_all(raws, art)
+    if weights is not None:
+        _reweight_records(records, weights)
     mx = max((r["final_score"] for r in records), default=0.0)
     if mx > 0:
         for r in records:
@@ -118,9 +176,12 @@ def _rank(raws: list[dict]) -> dict:
 
     raw_by_id = {loader.candidate_id(r): r for r in raws}
     rows = []
-    for rec in top:
+    for i, rec in enumerate(top):
         raw = raw_by_id[rec["candidate_id"]]
         p = loader.get_profile(raw)
+        # Contrastive overlay: the candidate immediately above is this row's peer.
+        neighbor = top[i - 1] if i > 0 else None
+        context = {"neighbor": neighbor} if neighbor is not None else None
         rows.append(
             {
                 "rank": rec["rank"],
@@ -130,7 +191,7 @@ def _rank(raws: list[dict]) -> dict:
                 "country": loader._s(p, "country"),
                 "yrs": loader._f(p, "years_of_experience"),
                 "honeypot": bool(rec["honeypot"]),
-                "reasoning": reasoning.generate(raw, rubric, rec),
+                "reasoning": reasoning.generate(raw, rubric, rec, context=context),
             }
         )
 
@@ -148,7 +209,7 @@ def _rank(raws: list[dict]) -> dict:
             "honeypot": best["honeypot"],
         }
 
-    weights = {k: v for k, v in rubric.get("component_weights", {}).items() if k != "_comment"}
+    effective_weights = weights if weights is not None else _default_weights(rubric)
     return {
         "rows": rows,
         "summary": {
@@ -157,13 +218,15 @@ def _rank(raws: list[dict]) -> dict:
             "top_score": rows[0]["score"] if rows else None,
         },
         "breakdown": breakdown,
-        "weights": weights,
+        "weights": effective_weights,
+        "default_weights": _default_weights(rubric),
     }
 
 
 class RankRequest(BaseModel):
     jsonl: str | None = None
     use_sample: bool = False
+    weights: dict[str, float] | None = None
 
 
 @app.get("/api/health")
@@ -176,6 +239,12 @@ def health() -> dict:
 def sample() -> str:
     with open(SAMPLE, encoding="utf-8") as f:
         return f.read()
+
+
+@app.get("/api/weights")
+def weights_endpoint() -> dict:
+    """JD-default component weights from the committed rubric."""
+    return {"default_weights": _default_weights(_state()["rubric"])}
 
 
 @app.post("/api/rank")
@@ -192,8 +261,9 @@ def rank_endpoint(req: RankRequest) -> dict:
             status_code=400,
             detail="No valid candidates found. Provide JSONL — one JSON object per line.",
         )
+    weights = _validate_weights(req.weights) if req.weights is not None else None
     try:
-        return _rank(raws)
+        return _rank(raws, weights=weights)
     except HTTPException:
         raise
     except Exception as e:  # surface a clean message instead of a 500 stack

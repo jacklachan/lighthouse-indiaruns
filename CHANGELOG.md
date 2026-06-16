@@ -25,7 +25,7 @@ All notable changes to this project are documented here. The format is loosely b
   `CODE_OF_CONDUCT.md`, and this changelog.
 - Lint (ruff), format (black), and type (mypy) gates wired into CI, plus a coverage
   floor on the rank-time package (`fail_under = 85`).
-- Expanded the test suite from 36 to 52 tests: `test_scoring.py` (normalize_semantic
+- Expanded the test suite from 36 to 63 tests: `test_scoring.py` (normalize_semantic
   bounds/clipping plus a regression guard for the NumPy-2 degenerate-range crash),
   `test_loader.py` (defensive accessors, date parsing, malformed-line streaming, sparse
   profiles), and metric edge cases (zero-IDCG NDCG, zero-k precision). Coverage of the
@@ -34,7 +34,7 @@ All notable changes to this project are documented here. The format is loosely b
   so the full suite runs in CI without the untracked challenge bundle.
 - README "How this maps to the brief" table — a rubric-to-repo index pointing each
   evaluated dimension at the file/evidence that satisfies it; refreshed the Tests
-  section to cover the full gate (ruff/black/mypy/coverage) and 52 tests.
+  section to cover the full gate (ruff/black/mypy/coverage) and 63 tests.
 
 ### Changed
 - README: corrected the artifacts row (float16 `.npy`, no git-lfs) to match the
