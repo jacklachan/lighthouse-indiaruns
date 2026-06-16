@@ -143,9 +143,14 @@
     "good_interview_completion": 0.6,
     "notice_preferred_days": 30,
     "notice_acceptable_days": 90,
+    "good_saves_30d": 20,
+    "good_views_30d": 150,
+    "fast_response_hours": 24,
+    "slow_response_hours": 168,
+    "good_endorsements_received": 75,
     "modifier_floor": 0.80,
     "modifier_ceiling": 1.12,
-    "rationale": "Behavioral signals MODIFY (multiplicatively) a fit score; they never drive it. JD: 'a perfect-on-paper candidate who hasn't logged in for 6 months and has a 5% recruiter response rate is, for hiring purposes, not actually available. Down-weight them appropriately.' Reward recent activity, high recruiter_response_rate, open_to_work, verified contact, healthy interview_completion_rate; penalize stale/unreachable. Capped so behavior can lift a weak base only modestly (ceiling 1.12) but can meaningfully sink an unreachable one (floor 0.80). Sentinels (-1 github, -1 offer, empty assessments) are COMMON (>60% of pool) and are treated as neutral, never penalized."
+    "rationale": "Behavioral signals MODIFY (multiplicatively) a fit score; they never drive it. JD: 'a perfect-on-paper candidate who hasn't logged in for 6 months and has a 5% recruiter response rate is, for hiring purposes, not actually available. Down-weight them appropriately.' Reward recent activity, high recruiter_response_rate, open_to_work, verified contact, healthy interview_completion_rate, recruiter saves / profile views / fast response / high peer endorsements; penalize stale/unreachable. Capped so behavior can lift a weak base only modestly (ceiling 1.12) but can meaningfully sink an unreachable one (floor 0.80). Sentinels (-1 github, -1 offer, empty assessments) are COMMON (>60% of pool) and are treated as neutral, never penalized."
   },
 
   "ai_core_skills": [

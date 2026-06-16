@@ -66,12 +66,53 @@ def classify_title(title: str, rubric: dict) -> str:
 _TITLE_SCORE = {"strong": 1.0, "positive": 0.7, "neutral": 0.4, "negative": 0.05}
 
 
+_AI_CS_FIELD_TERMS = (
+    "computer science",
+    "artificial intelligence",
+    "machine learning",
+    "data science",
+    "information retrieval",
+    "applied mathematics",
+    "statistics",
+    "software engineering",
+    "computer engineering",
+)
+
+
+def education_signal(raw: dict) -> float:
+    """Small in-[0,1] signal: does this candidate's education match the role?
+
+    Reads ``education[].tier`` (the dataset's tier_1/2/3 institution rank) and
+    ``field_of_study``. Previously unused — every candidate had the same
+    education footprint regardless of school or major. Tier_1 + AI/CS field
+    -> 1.0, tier_1 alone or AI/CS at tier_2 -> 0.5, anything else -> 0.
+    """
+    edu = loader.get_education(raw)
+    if not edu:
+        return 0.0
+    tiers = {e["tier"] for e in edu}
+    fields = " ".join((e.get("field_of_study") or "").lower() for e in edu)
+    has_tier_1 = "tier_1" in tiers
+    has_tier_2 = "tier_2" in tiers
+    is_ai_cs = any(t in fields for t in _AI_CS_FIELD_TERMS)
+    if has_tier_1 and is_ai_cs:
+        return 1.0
+    if has_tier_1 or (has_tier_2 and is_ai_cs):
+        return 0.5
+    if is_ai_cs:
+        return 0.25
+    return 0.0
+
+
 def role_coherence_taxonomy(raw: dict, rubric: dict) -> float:
-    """Coherence of titles with an AI/ML/IR/SWE-ranking trajectory, in [0,1].
+    """Coherence of titles + education with an AI/ML/IR/SWE-ranking trajectory, in [0,1].
 
     Blends the current title (weighted heavily) with the fraction of historical
-    roles that are positive. This is the taxonomy half of `role_coherence`;
-    `scoring.py` blends it with semantic fit.
+    roles that are positive, plus a small education signal (tier_1 + AI/CS
+    field of study). The education term is bounded so a strong title still
+    dominates and a non-AI background at a tier_1 school is not over-rewarded.
+    This is the taxonomy half of `role_coherence`; `scoring.py` blends it
+    with semantic fit.
     """
     p = loader.get_profile(raw)
     cur = classify_title(loader._s(p, "current_title"), rubric)
@@ -83,7 +124,9 @@ def role_coherence_taxonomy(raw: dict, rubric: dict) -> float:
         hist = sum(hist_scores) / len(hist_scores)
     else:
         hist = cur_score
-    return round(0.6 * cur_score + 0.4 * hist, 4)
+
+    edu = education_signal(raw)
+    return round(min(1.0, 0.55 * cur_score + 0.35 * hist + 0.10 * edu), 4)
 
 
 # ---------------------------------------------------------------------------

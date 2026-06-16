@@ -128,6 +128,41 @@ def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
             delta -= 0.05
             facts.append(f"{int(notice)}-day notice")
 
+    # Recruiter validation: saved_by_recruiters_30d is direct, asynchronous
+    # interest from recruiters who saw the profile. A non-trivial bookmark
+    # count is the strongest positive signal in the redrob_signals block
+    # beyond response_rate, so it gets a small +0.03 lift when present.
+    saves = sig.get("saved_by_recruiters_30d")
+    if isinstance(saves, (int, float)) and saves >= 0:
+        if saves >= b.get("good_saves_30d", 20):
+            delta += 0.03
+            facts.append(f"{int(saves)} recruiter saves (30d)")
+
+    # Funnel visibility: profile_views_received_30d. p90 ~150 on the sample,
+    # so this captures the genuinely-hot profiles without rewarding noise.
+    views = sig.get("profile_views_received_30d")
+    if isinstance(views, (int, float)) and views >= b.get("good_views_30d", 150):
+        delta += 0.02
+
+    # Responsiveness: avg_response_time_hours. Fast = good (small +0.02).
+    # Very slow > a week (168h) = small penalty; sentinel/negative is skipped.
+    art = sig.get("avg_response_time_hours")
+    if isinstance(art, (int, float)) and art >= 0:
+        if art <= b.get("fast_response_hours", 24):
+            delta += 0.02
+        elif art >= b.get("slow_response_hours", 168):
+            delta -= 0.03
+            facts.append(f"slow average response ({art:.0f}h)")
+
+    # Peer trust: profile-level endorsements_received (distinct from the
+    # per-skill endorsements that already feed trust_skills). A well-endorsed
+    # profile is harder to fake.
+    end_received = sig.get("endorsements_received")
+    if isinstance(end_received, (int, float)) and end_received >= b.get(
+        "good_endorsements_received", 75
+    ):
+        delta += 0.02
+
     mult = float(np.clip(1.0 + delta, b["modifier_floor"], b["modifier_ceiling"]))
     return round(mult, 4), facts
 

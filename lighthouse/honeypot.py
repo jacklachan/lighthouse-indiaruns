@@ -116,6 +116,16 @@ def detect(raw: dict) -> tuple[bool, list[str]]:
                 f"education '{e['degree']}' ends ({e['end_year']}) before it starts ({e['start_year']})"
             )
 
+    # --- 8. Redrob signup_date in the future ---
+    # Pre-fix this signal was never inspected. A signup_date strictly after
+    # the JD reference "now" is impossible — the candidate cannot have a
+    # Redrob account that does not yet exist. Catches a class of synthetic
+    # honeypots that were sliding through.
+    sig = loader.get_signals(raw)
+    signup = loader.parse_date(sig.get("signup_date"))
+    if signup and signup > REFERENCE_DATE:
+        reasons.append(f"Redrob signup_date {signup.isoformat()} is in the future")
+
     return (len(reasons) > 0, reasons)
 
 

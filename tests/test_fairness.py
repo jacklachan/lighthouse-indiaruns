@@ -173,6 +173,144 @@ def test_skip_gates_default_none_is_identical_to_omitting(rubric):
     assert a == b
 
 
+def _neutral_signals():
+    """Strip all positive signals so the modifier has headroom — otherwise the
+    default make_candidate candidate is already at the ceiling and new bonuses
+    cannot register."""
+    return {
+        "last_active_date": "2026-02-01",  # ~125d ago: -0.07 (room to grow)
+        "recruiter_response_rate": 0.4,  # in the neutral band
+        "open_to_work_flag": False,
+        "verified_email": False,
+        "verified_phone": False,
+        "interview_completion_rate": 0.5,
+        "notice_period_days": 60,
+        "skill_assessment_scores": {},
+    }
+
+
+def test_behavior_rewards_recruiter_saves(rubric):
+    """Previously unused: saved_by_recruiters_30d. A bookmarked profile
+    should now get a small positive lift."""
+    base = _neutral_signals()
+    cold = make_candidate(redrob_signals={**base, "saved_by_recruiters_30d": 0})
+    hot = make_candidate(redrob_signals={**base, "saved_by_recruiters_30d": 40})
+    cm, _ = scoring.behavioral_modifier(cold, rubric)
+    hm, hfacts = scoring.behavioral_modifier(hot, rubric)
+    assert hm > cm
+    assert any("recruiter saves" in f for f in hfacts)
+
+
+def test_behavior_rewards_high_profile_views(rubric):
+    base = _neutral_signals()
+    quiet = make_candidate(redrob_signals={**base, "profile_views_received_30d": 10})
+    hot = make_candidate(redrob_signals={**base, "profile_views_received_30d": 250})
+    assert (
+        scoring.behavioral_modifier(hot, rubric)[0] > scoring.behavioral_modifier(quiet, rubric)[0]
+    )
+
+
+def test_behavior_penalizes_slow_avg_response_time(rubric):
+    base = _neutral_signals()
+    fast = make_candidate(redrob_signals={**base, "avg_response_time_hours": 6})
+    slow = make_candidate(redrob_signals={**base, "avg_response_time_hours": 200})
+    fm, _ = scoring.behavioral_modifier(fast, rubric)
+    sm, sfacts = scoring.behavioral_modifier(slow, rubric)
+    assert fm > sm
+    assert any("slow average response" in f for f in sfacts)
+
+
+def test_behavior_ignores_negative_sentinel_on_new_signals(rubric):
+    """All four new signals must respect the -1 sentinel rule the rest
+    of behavioral_modifier already follows."""
+    c = make_candidate(
+        redrob_signals={
+            "saved_by_recruiters_30d": -1,
+            "profile_views_received_30d": -1,
+            "avg_response_time_hours": -1,
+            "endorsements_received": -1,
+        }
+    )
+    _, facts = scoring.behavioral_modifier(c, rubric)
+    for forbidden in ("recruiter saves", "slow average response"):
+        assert not any(forbidden in f for f in facts), facts
+
+
+def test_honeypot_flags_future_signup_date():
+    raw = {
+        "candidate_id": "CAND_FAKE",
+        "profile": {"years_of_experience": 5.0},
+        "career_history": [],
+        "education": [],
+        "skills": [],
+        "redrob_signals": {"signup_date": "2030-01-01"},
+    }
+    is_hp, reasons = honeypot.detect(raw)
+    assert is_hp
+    assert any("signup_date" in r for r in reasons)
+
+
+def test_education_signal_tier1_ai_field(rubric):
+    """A tier_1 institution + AI/CS field of study lifts role_coherence
+    (signals previously ignored). Comparing two otherwise-identical
+    candidates so the delta is the education term."""
+    tier1_ai = make_candidate(
+        profile={"current_title": "Software Engineer"},
+        education=[
+            {
+                "institution": "IIT Bombay",
+                "degree": "B.Tech",
+                "field_of_study": "Computer Science",
+                "start_year": 2014,
+                "end_year": 2018,
+                "tier": "tier_1",
+            }
+        ],
+    )
+    no_edu = make_candidate(
+        profile={"current_title": "Software Engineer"},
+        education=[],
+    )
+    assert features.role_coherence_taxonomy(tier1_ai, rubric) > features.role_coherence_taxonomy(
+        no_edu, rubric
+    )
+
+
+def test_education_signal_does_not_overpower_negative_title(rubric):
+    """Education boost is capped by 0.10 so a tier_1 CS background cannot
+    rescue a plainly non-engineering current title + history."""
+    accountant_iit = make_candidate(
+        profile={"current_title": "Accountant"},
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "Accountant",
+                "start_date": "2018-01-01",
+                "end_date": None,
+                "duration_months": 100,
+                "is_current": True,
+                "industry": "Finance",
+                "company_size": "201-500",
+                "description": "ledgers",
+            }
+        ],
+        education=[
+            {
+                "institution": "IIT Bombay",
+                "degree": "B.Tech",
+                "field_of_study": "Computer Science",
+                "start_year": 2014,
+                "end_year": 2018,
+                "tier": "tier_1",
+            }
+        ],
+    )
+    score = features.role_coherence_taxonomy(accountant_iit, rubric)
+    # Accountant cur + Accountant hist -> 0.05 each, plus 0.10*1.0 education.
+    # 0.55*0.05 + 0.35*0.05 + 0.10*1.0 = 0.145. Still strongly sub-fit.
+    assert score < 0.20
+
+
 def test_honeypot_still_flags_explicit_zero_duration_expert_claims():
     """Three advanced/expert skills with duration_months EXPLICITLY = 0 must
     still trigger the flag."""
