@@ -98,7 +98,9 @@ def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
             facts.append(f"last active {days}d ago")
 
     rr = sig.get("recruiter_response_rate")
-    if isinstance(rr, (int, float)):
+    # Guard against -1 (sentinel) and any other negative; only present, real
+    # rates should move the modifier. Missing or sentinel -> neutral.
+    if isinstance(rr, (int, float)) and rr >= 0:
         if rr >= b["good_response_rate"]:
             delta += 0.04
             facts.append(f"{rr:.0%} recruiter response")
@@ -122,7 +124,8 @@ def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
             facts.append(f"low {ic:.0%} interview completion")
 
     notice = sig.get("notice_period_days")
-    if isinstance(notice, (int, float)):
+    # Same sentinel guard: a -1 here must not be misread as "fast notice".
+    if isinstance(notice, (int, float)) and notice >= 0:
         if notice <= b["notice_preferred_days"]:
             delta += 0.02
         elif notice > b["notice_acceptable_days"]:

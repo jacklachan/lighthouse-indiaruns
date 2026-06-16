@@ -11,11 +11,13 @@ the product of multipliers and the list of fired reasons.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from . import features, loader
 
 _MIN_DATE = date(1900, 1, 1)
+_REF_DATE = date(2026, 6, 6)
+_RECENT_CUTOFF = _REF_DATE - timedelta(days=18 * 30)
 
 
 def _career_text(raw: dict) -> str:
@@ -24,6 +26,21 @@ def _career_text(raw: dict) -> str:
         parts.append(h["title"])
         parts.append(h["description"])
     parts += [s["name"] for s in loader.get_skills(raw)]
+    return " ".join(parts).lower()
+
+
+def _recent_career_text(raw: dict) -> str:
+    """Concatenation of titles+descriptions from roles still active within the
+    last ~18 months (current roles always count). Used by the LangChain gate so
+    it actually enforces the 'recent only' clause from the rubric rule."""
+    parts: list[str] = []
+    for h in loader.get_career(raw):
+        if h["is_current"]:
+            parts.append(h["title"] + " " + h["description"])
+            continue
+        ed = h["end_date"]
+        if ed and ed >= _RECENT_CUTOFF:
+            parts.append(h["title"] + " " + h["description"])
     return " ".join(parts).lower()
 
 
@@ -81,8 +98,12 @@ def gate_cv_speech_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]
 
 
 def gate_langchain_only_recent(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
+    """Fire only when wrapper terms appear in *recent* (<=18mo) roles AND the
+    full career text shows no classical-ML / retrieval depth. The recency arm
+    enforces the rubric rule ('AI signals are recent') the old code skipped."""
     g = _gate(rubric, "langchain_only_recent")
-    wrapper = features.count_hits(text, g["wrapper_terms"])
+    recent = _recent_career_text(raw)
+    wrapper = features.count_hits(recent, g["wrapper_terms"])
     depth = features.count_hits(text, g["depth_terms"])
     if wrapper >= 2 and depth == 0:
         return (

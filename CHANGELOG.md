@@ -52,6 +52,26 @@ All notable changes to this project are documented here. The format is loosely b
   unaffected.
 - Type-only: added explicit `Optional` annotations on `None`-defaulted parameters in
   `scoring.py` / `ranker.py` (no runtime behavior change).
+- **Fairness pass over the ranker (may shift individual scores in the 100K run; the
+  qualitative headlines — top-1 still `CAND_0000031`, 0 honeypots in top-100, 0
+  keyword-stuffers in top-25 — are preserved on the sample fixture):**
+  - `behavioral_modifier` now guards `recruiter_response_rate >= 0` and
+    `notice_period_days >= 0`. A `-1` sentinel in either field used to incorrectly
+    apply the "low response" penalty or the "fast notice" bonus; both are now
+    treated as neutral (matching the rubric's stated sentinel policy).
+  - `gate_langchain_only_recent` now actually checks recency: wrapper terms only
+    count when they appear in a role still active within the last 18 months. The
+    rule field in `jd_rubric.json` always said this, but the code matched on
+    full career text and ignored timestamps.
+  - `classify_title` now lets a positive title term ("software engineer", "ml
+    engineer", …) trump a negative substring when both are present in the same
+    title — e.g. `"Marketing Software Engineer"` classifies as positive, not
+    negative. A plain `"Marketing Manager"` (no positive term) still classifies
+    as negative.
+  - `honeypot.detect` no longer treats a missing `duration_months` field as
+    "explicitly zero". The advanced/expert-with-zero-months rule now walks the
+    raw skills list and requires the field to be present and equal to 0,
+    so sparse-but-honest profiles are no longer at risk of a false positive.
 
 ### Notes
 - The ranked output (`submission.csv`) and the rank-time runtime dependencies

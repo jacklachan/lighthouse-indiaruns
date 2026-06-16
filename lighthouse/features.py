@@ -43,17 +43,23 @@ def any_hit(text: str, terms: list[str]) -> bool:
 
 
 def classify_title(title: str, rubric: dict) -> str:
-    """Return 'strong' | 'positive' | 'negative' | 'neutral' for a job title."""
+    """Return 'strong' | 'positive' | 'negative' | 'neutral' for a job title.
+
+    When a title carries BOTH a positive and a negative substring (e.g.
+    'Marketing Software Engineer') the positive wins — the role is the
+    engineering one, with marketing as the domain. A pure 'Marketing Manager'
+    still classifies as negative because no positive term is present.
+    """
     t = _norm(title)
     if not t:
         return "neutral"
     tax = rubric["role_taxonomy"]
     if any(term in t for term in tax["strong_positive_title_terms"]):
         return "strong"
-    if any(term in t for term in tax["negative_title_terms"]):
-        return "negative"
     if any(term in t for term in tax["positive_title_terms"]):
         return "positive"
+    if any(term in t for term in tax["negative_title_terms"]):
+        return "negative"
     return "neutral"
 
 

@@ -36,15 +36,26 @@ def detect(raw: dict) -> tuple[bool, list[str]]:
     p = loader.get_profile(raw)
     yoe = loader._f(p, "years_of_experience")
     career = loader.get_career(raw)
-    skills = loader.get_skills(raw)
     edu = loader.get_education(raw)
 
     # --- 1. claimed expertise with zero usage ---
-    expert_zero = [
-        s["name"]
-        for s in skills
-        if s["proficiency"] in ("advanced", "expert") and s["duration_months"] == 0
-    ]
+    # Walk the RAW skills list (not the loader-normalized one) so a candidate
+    # whose record simply omits `duration_months` is treated as "unknown",
+    # not "explicitly zero". The loader collapses missing -> 0 for
+    # convenience, but that collapse is unfair here: an honest sparse profile
+    # would otherwise get flagged as a honeypot. Only an EXPLICIT integer 0
+    # alongside an advanced/expert claim is impossible-looking.
+    raw_skills = raw.get("skills") or []
+    expert_zero: list[str] = []
+    for s in raw_skills:
+        if not isinstance(s, dict):
+            continue
+        prof = (s.get("proficiency") or "").lower()
+        if prof not in ("advanced", "expert"):
+            continue
+        dm = s.get("duration_months")
+        if isinstance(dm, (int, float)) and dm == 0:
+            expert_zero.append(str(s.get("name") or ""))
     if len(expert_zero) >= 3:
         reasons.append(
             f"{len(expert_zero)} skills claimed advanced/expert with 0 months used "

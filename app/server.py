@@ -179,8 +179,16 @@ def _rank(raws: list[dict], weights: dict[str, float] | None = None) -> dict:
     for i, rec in enumerate(top):
         raw = raw_by_id[rec["candidate_id"]]
         p = loader.get_profile(raw)
-        # Contrastive overlay: the candidate immediately above is this row's peer.
-        neighbor = top[i - 1] if i > 0 else None
+        # Contrastive overlay: pair with the closest contender BELOW so the
+        # clause reads as "Edges CAND_X on role_coherence" — the money shot
+        # the brief asks for ("why this one beats its twin"). For the last
+        # row there is nothing below, so we fall back to the row above.
+        if i + 1 < len(top):
+            neighbor = top[i + 1]
+        elif i > 0:
+            neighbor = top[i - 1]
+        else:
+            neighbor = None
         context = {"neighbor": neighbor} if neighbor is not None else None
         rows.append(
             {
