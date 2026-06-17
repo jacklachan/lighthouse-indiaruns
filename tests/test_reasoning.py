@@ -139,6 +139,110 @@ def test_contrastive_clause_names_real_peer(rubric, sample_candidates):
     assert saw_clause, "expected at least one contrastive clause to fire across the sample"
 
 
+def test_lift_clause_names_cheapest_component_bump(rubric):
+    """When the row above is within reach, the reasoning should surface the
+    cheapest component bump that would overtake them — the 'what would change
+    this rank' the strat doc calls the money shot."""
+    raw = make_candidate()
+    rec = {
+        "candidate_id": "CAND_ME",
+        "rank": 12,
+        "components": {
+            "semantic_fit": 0.5,
+            "role_coherence": 0.6,
+            "career_evidence": 0.5,
+            "experience_fit": 0.7,
+            "trust_skills": 0.4,
+        },
+        "base": 0.5,
+        "gate_mult": 1.0,
+        "gate_reasons": [],
+        "behavior_mult": 1.0,
+        "behavior_facts": [],
+        "honeypot": False,
+        "honeypot_reasons": [],
+        "final_score": 0.53,
+    }
+    above = dict(rec)
+    above["candidate_id"] = "CAND_ABOVE"
+    above["rank"] = 11
+    above["final_score"] = 0.55  # deficit 0.02
+    text = reasoning.generate(raw, rubric, rec, context={"above": above})
+    assert "CAND_ABOVE" in text, text
+    assert "overtake" in text.lower(), text
+
+
+def test_lift_clause_silent_when_already_ahead(rubric):
+    """No lift clause when ``above`` is below (negative deficit)."""
+    raw = make_candidate()
+    rec = {
+        "candidate_id": "CAND_ME",
+        "rank": 12,
+        "components": {
+            "semantic_fit": 0.5,
+            "role_coherence": 0.6,
+            "career_evidence": 0.5,
+            "experience_fit": 0.7,
+            "trust_skills": 0.4,
+        },
+        "base": 0.6,
+        "gate_mult": 1.0,
+        "gate_reasons": [],
+        "behavior_mult": 1.0,
+        "behavior_facts": [],
+        "honeypot": False,
+        "honeypot_reasons": [],
+        "final_score": 0.6,
+    }
+    above = dict(rec)
+    above["candidate_id"] = "CAND_ABOVE"
+    above["rank"] = 11
+    above["final_score"] = 0.55  # lower than rec
+    text = reasoning.generate(raw, rubric, rec, context={"above": above})
+    assert "overtake" not in text.lower()
+
+
+def test_contrastive_names_component_by_weighted_contribution(rubric):
+    """Pre-fix the clause picked the largest RAW per-component gap, which can
+    point at experience_fit (weight 0.10) when role_coherence (weight 0.26)
+    actually drove the score difference. The clause must name the component
+    whose weighted contribution mattered."""
+    raw = make_candidate()
+    rec = {
+        "candidate_id": "CAND_LEAD",
+        "rank": 5,
+        "components": {
+            "semantic_fit": 0.5,
+            "role_coherence": 0.70,
+            "career_evidence": 0.5,
+            "experience_fit": 0.85,
+            "trust_skills": 0.5,
+        },
+        "base": 0.6,
+        "gate_mult": 1.0,
+        "gate_reasons": [],
+        "behavior_mult": 1.0,
+        "behavior_facts": [],
+        "honeypot": False,
+        "honeypot_reasons": [],
+        "final_score": 0.6,
+    }
+    neighbor = dict(rec)
+    neighbor["candidate_id"] = "CAND_PEER"
+    neighbor["rank"] = 6
+    neighbor["components"] = {
+        "semantic_fit": 0.5,
+        "role_coherence": 0.60,  # gap 0.10 * w 0.26 = 0.026
+        "career_evidence": 0.5,
+        "experience_fit": 0.65,  # gap 0.20 * w 0.10 = 0.020
+        "trust_skills": 0.5,
+    }
+    text = reasoning.generate(raw, rubric, rec, context={"neighbor": neighbor})
+    assert "CAND_PEER" in text, text
+    assert "role coherence" in text.lower(), text
+    assert "experience fit" not in text.lower(), text
+
+
 def test_low_rank_filler_tone(rubric):
     # a weak candidate at rank 95 should read as adjacent/filler, not glowing
     c = make_candidate(

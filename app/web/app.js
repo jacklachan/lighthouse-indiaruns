@@ -273,12 +273,16 @@
       }
       tr.innerHTML =
         '<td><span class="' + rankCls + '">' + r.rank + "</span></td>" +
-        '<td><div class="cid">' + esc(r.candidate_id) + "</div>" +
+        '<td><div class="cid">' + esc(r.candidate_id) +
+          ' <button class="similar-btn" data-cid="' + esc(r.candidate_id) + '" title="Find similar candidates">📡</button></div>' +
           '<div class="score-bar"><span style="right:' + (100 - Math.max(0, Math.min(1, r.score)) * 100).toFixed(1) + '%"></span></div></td>' +
         '<td><div>' + esc(r.title || "—") + hp + gateChips + '</div><div class="muted-cell">' + esc(r.country || "") + "</div></td>" +
         '<td class="muted-cell">' + (r.yrs != null ? r.yrs : "—") + "</td>" +
         '<td class="reason-cell">' + esc(r.reasoning || "") + "</td>";
       tbody.appendChild(tr);
+    });
+    $$("#rows .similar-btn").forEach(function (b) {
+      b.addEventListener("click", function () { findSimilar(b.getAttribute("data-cid")); });
     });
     if (hasAnime) {
       window.anime({ targets: "#rows tr", translateY: [14, 0], opacity: [0, 1], delay: window.anime.stagger(35), duration: 480, easing: "easeOutCubic" });
@@ -513,6 +517,223 @@
     initPresets();
   }
 
+  /* ------------------------------------------------------------------ *
+   *  Discovery: facets + experience curve + similar-candidates
+   * ------------------------------------------------------------------ */
+  function rankBodyForCurrentSource() {
+    if (state.mode === "upload") {
+      if (!state.fileText) { showError("Choose or drop a JSONL file first."); return null; }
+      return { jsonl: state.fileText, use_sample: false };
+    }
+    return { use_sample: true };
+  }
+
+  function findSimilar(cid) {
+    var body = rankBodyForCurrentSource();
+    if (!body) return;
+    body.candidate_id = cid;
+    body.limit = 10;
+    setLoading(true);
+    fetch("/api/similar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.detail || "Similar lookup failed");
+        return data;
+      });
+    }).then(function (data) {
+      setLoading(false);
+      renderSimilar(data);
+    }).catch(function (err) {
+      setLoading(false);
+      showError(err.message || "Similar lookup failed");
+    });
+  }
+
+  function renderSimilar(data) {
+    var panel = $("#similar-panel");
+    var target = data.target || {};
+    $("#similar-target").textContent = target.candidate_id + " (" + (target.title || "—") + ")";
+    var body = $("#similar-body");
+    if (!data.rows || !data.rows.length) {
+      body.innerHTML = '<p class="note">No similar candidates found in this batch.</p>';
+    } else {
+      var rows = data.rows.map(function (r) {
+        var note = r.note ? '<div class="sim-note">' + esc(r.note) + '</div>' : "";
+        return '<div class="similar-row">' +
+          '<span class="sim-rank">' + r.rank + '</span>' +
+          '<div class="sim-main">' +
+            '<div><strong>' + esc(r.candidate_id) + '</strong> · ' +
+            '<span class="muted-cell">' + esc(r.title || "—") + ' · ' + esc(r.country || "") + '</span></div>' +
+            note +
+          '</div>' +
+          '<span class="sim-score">cos ' + r.similarity.toFixed(3) + '</span>' +
+        '</div>';
+      }).join("");
+      body.innerHTML = rows;
+    }
+    panel.style.display = "";
+    panel.open = true;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function extractFacetsFromProse() {
+    var text = $("#prose-input").value || "";
+    if (text.trim().length < 50) {
+      showError("Paste at least a short JD before extracting facets.");
+      return;
+    }
+    setLoading(true);
+    fetch("/api/facets_from_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text })
+    }).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) throw new Error(d.detail || "Extraction failed");
+        return d;
+      });
+    }).then(function (d) {
+      setLoading(false);
+      $("#facets-input").value = (d.facets || []).join("\n");
+    }).catch(function (err) { setLoading(false); showError(err.message); });
+  }
+
+  function searchPool() {
+    var cid = ($("#pool-cid").value || "").trim();
+    var limit = parseInt($("#pool-limit").value, 10) || 20;
+    if (!cid) { showError("Enter a candidate_id."); return; }
+    setLoading(true);
+    fetch("/api/similar_pool", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ candidate_id: cid, limit: limit })
+    }).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) throw new Error(d.detail || "Search failed");
+        return d;
+      });
+    }).then(function (d) {
+      setLoading(false);
+      renderPoolResults(d);
+    }).catch(function (err) { setLoading(false); showError(err.message); });
+  }
+
+  function renderPoolResults(d) {
+    var box = $("#pool-results");
+    if (!d.rows || !d.rows.length) {
+      box.innerHTML = '<p class="note">No matches.</p>';
+      return;
+    }
+    box.innerHTML =
+      '<p class="note">Top ' + d.rows.length + ' look-alikes for ' + esc(d.target) +
+      ' across ' + d.pool_size.toLocaleString("en-US") + ' candidates.</p>' +
+      d.rows.map(function (r) {
+        return '<div class="similar-row">' +
+          '<span class="sim-rank">' + r.rank + '</span>' +
+          '<div class="sim-main"><strong>' + esc(r.candidate_id) + '</strong></div>' +
+          '<span class="sim-score">cos ' + r.similarity.toFixed(3) + '</span>' +
+        '</div>';
+      }).join("");
+  }
+
+  function initDiscovery() {
+    Promise.all([
+      fetch("/api/facets").then(function (r) { return r.json(); }),
+      fetch("/api/experience").then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      var f = results[0];
+      $("#facets-input").value = (f.facets || []).join("\n");
+      var e = results[1];
+      renderExperienceGrid(e);
+    }).catch(function () {
+      $("#facets-input").placeholder = "Could not load JD facets.";
+    });
+
+    $("#save-facets").addEventListener("click", function () {
+      var lines = $("#facets-input").value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
+      if (lines.length < 3 || lines.length > 20) {
+        showError("Need 3–20 facets, one per line. You have " + lines.length + ".");
+        return;
+      }
+      setLoading(true);
+      fetch("/api/facets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facets: lines })
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.detail || "Save failed");
+          return d;
+        });
+      }).then(function () {
+        $("#discovery-status").textContent = "Custom JD";
+        setLoading(false);
+        rank({ quiet: false });
+      }).catch(function (err) { setLoading(false); showError(err.message); });
+    });
+
+    $("#save-experience").addEventListener("click", function () {
+      var fields = ["band_min", "ideal_min", "ideal_max", "band_max"];
+      var payload = {};
+      for (var i = 0; i < fields.length; i++) {
+        var v = parseFloat($("#exp-" + fields[i]).value);
+        if (isNaN(v) || v < 0) { showError("All experience values must be non-negative numbers."); return; }
+        payload[fields[i]] = v;
+      }
+      setLoading(true);
+      fetch("/api/experience", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.detail || "Save failed");
+          return d;
+        });
+      }).then(function () {
+        $("#discovery-status").textContent = "Custom JD";
+        setLoading(false);
+        rank({ quiet: false });
+      }).catch(function (err) { setLoading(false); showError(err.message); });
+    });
+
+    $("#extract-facets").addEventListener("click", extractFacetsFromProse);
+    $("#pool-search").addEventListener("click", searchPool);
+
+    $("#reset-discovery").addEventListener("click", function () {
+      setLoading(true);
+      fetch("/api/reset", { method: "POST" }).then(function () {
+        return Promise.all([
+          fetch("/api/facets").then(function (r) { return r.json(); }),
+          fetch("/api/experience").then(function (r) { return r.json(); })
+        ]);
+      }).then(function (results) {
+        $("#facets-input").value = (results[0].facets || []).join("\n");
+        renderExperienceGrid(results[1]);
+        $("#discovery-status").textContent = "Defaults loaded";
+        setLoading(false);
+        rank({ quiet: false });
+      }).catch(function (err) { setLoading(false); showError(err.message); });
+    });
+  }
+
+  function renderExperienceGrid(e) {
+    var fields = [
+      ["band_min", "Band min"],
+      ["ideal_min", "Ideal min"],
+      ["ideal_max", "Ideal max"],
+      ["band_max", "Band max"]
+    ];
+    $("#experience-grid").innerHTML = fields.map(function (f) {
+      var v = e[f[0]];
+      return '<div class="exp-row"><label>' + f[1] + '</label>' +
+        '<input type="number" id="exp-' + f[0] + '" min="0" step="0.5" value="' + v + '" /></div>';
+    }).join("");
+  }
+
   /* ------------------------------------------------------------------ */
   document.addEventListener("DOMContentLoaded", function () {
     initBeam();
@@ -522,6 +743,7 @@
     initUpload();
     setMode("sample");
     initWeights();
+    initDiscovery();
     $("#rank-btn").addEventListener("click", function () { rank(); });
     $("#download-btn").addEventListener("click", downloadCsv);
   });

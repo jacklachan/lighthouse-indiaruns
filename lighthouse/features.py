@@ -14,6 +14,12 @@ from __future__ import annotations
 import math
 
 from . import loader
+from .constants import REFERENCE_DATE
+
+# Half-life (years) for career-evidence recency decay. 4 years is short enough
+# that the LLM-era explosion of work isn't drowned out by 10-yr-old roles, long
+# enough that a senior engineer's mid-career foundational work still counts.
+_RECENCY_HALF_LIFE_YEARS = 4.0
 
 PROFICIENCY_WEIGHT = {"beginner": 0.25, "intermediate": 0.5, "advanced": 0.8, "expert": 1.0}
 
@@ -135,8 +141,24 @@ def role_coherence_taxonomy(raw: dict, rubric: dict) -> float:
 
 
 def is_services_company(name: str, rubric: dict) -> bool:
+    """Substring match of `name` against the services-firm list in the rubric.
+
+    Looks the list up by gate key (``services_only``) rather than by positional
+    index — the previous ``hard_negatives[0]`` was a latent bug waiting on a
+    rubric reorder.
+    """
+    if not name:
+        return False
     n = _norm(name)
-    return any(c in n for c in rubric["hard_negatives"][0]["companies"])
+    companies = next(
+        (
+            g["companies"]
+            for g in rubric.get("hard_negatives", [])
+            if g.get("key") == "services_only"
+        ),
+        (),
+    )
+    return any(c in n for c in companies)
 
 
 def services_fraction(raw: dict, rubric: dict) -> float:
@@ -152,19 +174,40 @@ def services_fraction(raw: dict, rubric: dict) -> float:
 # ---------------------------------------------------------------------------
 
 
+def _role_recency_weight(h: dict) -> float:
+    """Exponential decay weight in (0, 1] anchored on how recently the role ended.
+
+    Current roles get weight 1.0. A role that ended 4 years ago gets 0.5; 8
+    years ago gets 0.25. Roles with no usable end date fall back to 1.0 — we
+    trust the loader's date parsing and only decay when we have hard evidence
+    the work is stale.
+    """
+    if h["is_current"]:
+        return 1.0
+    end = h["end_date"]
+    if not end:
+        return 1.0
+    years_ago = max(0.0, (REFERENCE_DATE - end).days / 365.0)
+    return 0.5 ** (years_ago / _RECENCY_HALF_LIFE_YEARS)
+
+
 def career_evidence(raw: dict, rubric: dict) -> float:
     """Did they actually BUILD ranking/search/recsys/retrieval at product cos? [0,1]
 
     Per role: term density over the description x a product-vs-services weight.
     Aggregate emphasises the single best role (JD: 'shipped at least one
-    end-to-end ranking/search/recommendation system'), with a mean term so a
-    consistently-strong career also benefits.
+    end-to-end ranking/search/recommendation system'), with a recency-weighted
+    *mean* term so a consistently-strong recent career outweighs the same
+    consistency from a decade ago. The single-role max term is left undecayed:
+    one foundational shipped system is real evidence regardless of when, and
+    decaying it would punish veterans for being veterans.
     """
     career = loader.get_career(raw)
     if not career:
         return 0.0
     terms = rubric["career_evidence_terms"]
-    role_ev = []
+    role_ev: list[float] = []
+    weights: list[float] = []
     for h in career:
         hits = count_hits(h["description"] + " " + h["title"], terms)
         density = min(hits / 4.0, 1.0)
@@ -175,7 +218,14 @@ def career_evidence(raw: dict, rubric: dict) -> float:
         else:
             product_w = 0.85
         role_ev.append(density * product_w)
-    return round(0.65 * max(role_ev) + 0.35 * (sum(role_ev) / len(role_ev)), 4)
+        weights.append(_role_recency_weight(h))
+    best = max(role_ev)
+    total_w = sum(weights)
+    if total_w > 0:
+        rec_mean = sum(e * w for e, w in zip(role_ev, weights, strict=True)) / total_w
+    else:
+        rec_mean = sum(role_ev) / len(role_ev)
+    return round(0.65 * best + 0.35 * rec_mean, 4)
 
 
 # ---------------------------------------------------------------------------

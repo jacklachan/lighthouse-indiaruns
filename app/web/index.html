@@ -161,6 +161,40 @@
           <input type="file" id="file-input" accept=".jsonl,.json,.txt" hidden />
         </div>
 
+        <details class="weights-panel" id="discovery-panel">
+          <summary>
+            <span>🧭 Redefine the JD <span class="pill-soft" id="discovery-status">Defaults loaded</span></span>
+            <span class="chev">▾</span>
+          </summary>
+          <div class="weights-body">
+            <p class="note">Replace the JD's 10 facets, retune the experience band, and re-rank against your own role spec. The encoder runs server-side; first save may take a few seconds.</p>
+            <div class="weights-grid">
+              <div class="weights-col">
+                <div class="col-title">JD facets (one per line)</div>
+                <textarea id="facets-input" rows="8" class="facets-textarea" spellcheck="false"></textarea>
+                <details class="prose-panel">
+                  <summary>📝 Paste a JD instead — auto-extract facets</summary>
+                  <textarea id="prose-input" rows="6" class="facets-textarea" placeholder="Paste the full job description here — bullets or paragraphs both work."></textarea>
+                  <div class="weights-actions" style="margin-top:6px">
+                    <button class="btn btn-ghost" id="extract-facets">✂ Extract facets from text</button>
+                  </div>
+                </details>
+                <div class="weights-actions" style="margin-top:8px">
+                  <button class="btn btn-ghost" id="save-facets">💾 Save facets &amp; re-rank</button>
+                </div>
+              </div>
+              <div class="weights-col">
+                <div class="col-title">Experience curve (years)</div>
+                <div id="experience-grid"></div>
+                <div class="weights-actions" style="margin-top:8px">
+                  <button class="btn btn-ghost" id="save-experience">💾 Save curve &amp; re-rank</button>
+                  <button class="btn btn-ghost" id="reset-discovery">↺ Reset JD</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
         <details class="weights-panel" id="weights-panel" open>
           <summary>
             <span>🎚️ Tune the JD rubric <span class="pill-soft" id="weights-status">JD defaults</span></span>
@@ -233,6 +267,24 @@
           <details class="breakdown" id="breakdown">
             <summary><span>🔬 Top candidate — component breakdown</span><span class="chev">▾</span></summary>
             <div class="breakdown-body" id="breakdown-body"></div>
+          </details>
+
+          <details class="breakdown" id="similar-panel" style="display:none">
+            <summary><span>📡 Similar candidates — <span id="similar-target"></span></span><span class="chev">▾</span></summary>
+            <div class="breakdown-body" id="similar-body"></div>
+          </details>
+
+          <details class="breakdown" id="pool-panel">
+            <summary><span>🌐 Search the 100K pool</span><span class="chev">▾</span></summary>
+            <div class="breakdown-body">
+              <p class="note">Find look-alikes anywhere in the full 100K candidate pool by ID — no upload required. Uses the precomputed embedding index.</p>
+              <div class="pool-search-row">
+                <input type="text" id="pool-cid" placeholder="CAND_0000031" />
+                <input type="number" id="pool-limit" min="1" max="100" value="20" />
+                <button class="btn btn-ghost" id="pool-search">🌐 Search pool</button>
+              </div>
+              <div id="pool-results"></div>
+            </div>
           </details>
 
           <div class="tool-actions" style="margin-top:22px">

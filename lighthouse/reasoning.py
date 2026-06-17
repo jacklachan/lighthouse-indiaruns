@@ -157,7 +157,7 @@ def _concern_clause(f: dict, record: dict, band: str) -> str:
     concerns += [
         c
         for c in record.get("behavior_facts", [])
-        if any(k in c for k in ("low", "inactive", "notice", "last active"))
+        if any(k in c for k in ("low", "inactive", "notice", "last active", "slow"))
     ]
 
     if record.get("honeypot"):
@@ -240,11 +240,11 @@ def _near_miss_clause(raw: dict, rubric: dict, record: dict) -> str:
     if record.get("gate_reasons") or record.get("honeypot"):
         return ""  # already-explained concerns dominate
     msgs: list[str] = []
-    # services_only nearly: >= 0.7 of roles at a services firm but not the
-    # 0.999 the gate requires.
+    # services_only nearly: >= 0.7 of roles at a services firm but below the
+    # gate's 0.85 ramp threshold.
     sf = features.services_fraction(raw, rubric)
-    if 0.7 <= sf < 0.999:
-        msgs.append(f"services_fraction {sf:.2f} (gate fires at 1.00)")
+    if 0.7 <= sf < 0.85:
+        msgs.append(f"services_fraction {sf:.2f} (gate ramp starts at 0.85)")
     # title_chaser nearly: 3 roles with short avg tenure (gate wants >=4).
     stats = features.tenure_stats(raw)
     if stats["n_roles"] == 3 and 0 < stats["avg_tenure_months"] < 20:
@@ -254,8 +254,68 @@ def _near_miss_clause(raw: dict, rubric: dict, record: dict) -> str:
     return " Close call: " + msgs[0] + "."
 
 
-def _contrastive_clause(record: dict, context: dict) -> str:
-    """One-line ' vs. peer' grounded in the per-component delta."""
+def _lift_clause(record: dict, context: dict, rubric: dict) -> str:
+    """Cheapest realistic move that would push this candidate over the row above.
+
+    Given the row above's final score, compute how much an extra unit on each
+    component would raise this candidate's final score:
+
+        final = base * gate_mult * behavior_mult
+        base  = Σ w_i * c_i
+        Δfinal per unit of c_i = w_i * gate_mult * behavior_mult
+
+    The cheapest component to bump is the one with the largest leverage that
+    has headroom (raw value < 1.0). We surface it only when the deficit is
+    realistically closable — small enough to be a one-fact change, not a
+    rewrite of the candidate. Honeypots get no lift clause (they can never
+    overtake; final is zeroed).
+    """
+    above = context.get("above")
+    if not isinstance(above, dict) or record.get("honeypot"):
+        return ""
+    a_score = above.get("final_score")
+    my_score = record.get("final_score")
+    a_rank = above.get("rank")
+    a_id = above.get("candidate_id")
+    if a_score is None or my_score is None or a_rank is None or not a_id:
+        return ""
+    deficit = a_score - my_score
+    if deficit <= 0 or deficit > 0.05:
+        return ""  # already ahead or too far back for a single-bump story
+
+    weights = _component_weights(rubric)
+    gate_mult = record.get("gate_mult", 1.0) or 1.0
+    beh_mult = record.get("behavior_mult", 1.0) or 1.0
+    comps = record.get("components", {})
+
+    # leverage_i = w_i * gate_mult * beh_mult; needed_i = deficit / leverage_i
+    candidates = []
+    for k, w in weights.items():
+        leverage = w * gate_mult * beh_mult
+        if leverage <= 0:
+            continue
+        headroom = max(0.0, 1.0 - comps.get(k, 0.0))
+        needed = deficit / leverage
+        if needed > headroom or needed > 0.25:
+            continue  # cannot close, or would require a wholesale change
+        candidates.append((needed, k))
+    if not candidates:
+        return ""
+    candidates.sort()
+    needed, k = candidates[0]
+    label = _COMPONENT_LABEL[k]
+    return f" One step from rank {a_rank}: +{needed:.2f} {label} would overtake {a_id}."
+
+
+def _contrastive_clause(record: dict, context: dict, rubric: dict) -> str:
+    """One-line ' vs. peer' grounded in the weighted per-component contribution gap.
+
+    Ranks components by ``gap × weight`` rather than raw gap so the clause names
+    the component that actually moved the final score, not just the one with
+    the biggest raw delta. (A 0.15 raw gap on experience_fit (w=0.10) contributes
+    0.015 to the score; a 0.10 raw gap on role_coherence (w=0.26) contributes
+    0.026 — the latter is the real reason this candidate edges its peer.)
+    """
     neighbor = context.get("neighbor")
     if not isinstance(neighbor, dict):
         return ""
@@ -269,17 +329,21 @@ def _contrastive_clause(record: dict, context: dict) -> str:
     if not n_comps:
         return ""
 
-    # Largest absolute per-component gap that points the right way (this
-    # candidate is above neighbor when neighbor is ranked below it).
+    weights = _component_weights(rubric)
     direction = 1 if record.get("rank", 999) < n_rank else -1
     diffs = []
     for k in _COMPONENT_LABEL:
-        d = (my_comps.get(k, 0.0) - n_comps.get(k, 0.0)) * direction
-        diffs.append((k, d, my_comps.get(k, 0.0), n_comps.get(k, 0.0)))
+        raw_gap = (my_comps.get(k, 0.0) - n_comps.get(k, 0.0)) * direction
+        contrib = raw_gap * weights.get(k, 0.0)
+        diffs.append((k, contrib, raw_gap, my_comps.get(k, 0.0), n_comps.get(k, 0.0)))
     diffs.sort(key=lambda x: x[1], reverse=True)
-    k, gap, mine, theirs = diffs[0]
-    if gap < 0.08:
-        return ""  # too close to call honestly
+    k, contrib, raw_gap, mine, theirs = diffs[0]
+    # Cutoff in CONTRIBUTION units: 0.02 of the final score (a meaningful move
+    # given a typical score in [0,1] and components capped at 1.0). Also require
+    # the raw gap to point the right way — defensive against pathological cases
+    # where a tiny opposite gap × high weight beats a real gap × low weight.
+    if contrib < 0.02 or raw_gap <= 0:
+        return ""
     label = _COMPONENT_LABEL[k]
     verb = "Edges" if direction > 0 else "Trails"
     return f" {verb} {n_id} (rank {n_rank}) on {label} ({mine:.2f} vs {theirs:.2f})."
@@ -305,6 +369,7 @@ def generate(raw: dict, rubric: dict, record: dict, context: dict | None = None)
     if context is not None:
         text += _confidence_clause(comps, rubric, record, band)
         text += _near_miss_clause(raw, rubric, record)
-        text += _contrastive_clause(record, context)
+        text += _contrastive_clause(record, context, rubric)
+        text += _lift_clause(record, context, rubric)
 
     return " ".join(text.split()).strip()

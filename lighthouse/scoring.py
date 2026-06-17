@@ -30,15 +30,48 @@ from .constants import REFERENCE_DATE
 # ---------------------------------------------------------------------------
 
 
-def raw_semantic_fit(cand_emb: np.ndarray, facet_emb: np.ndarray) -> np.ndarray:
-    """Per-candidate raw semantic fit = 0.6*max + 0.4*mean facet cosine.
+TOP_K_FACETS = 4
+
+
+def raw_semantic_fit(
+    cand_emb: np.ndarray,
+    facet_emb: np.ndarray,
+    facet_weights: np.ndarray | list[float] | None = None,
+) -> np.ndarray:
+    """Per-candidate raw semantic fit = 0.6*max + 0.4*top-K mean facet cosine.
 
     Both matrices are L2-normalized, so the dot product is cosine. Returns a
-    1-D array aligned to cand_emb rows. (max rewards a strong single-facet
-    match; mean rewards broad alignment.)
+    1-D array aligned to cand_emb rows.
+
+    ``facet_weights`` is an optional per-facet importance multiplier (Discovery
+    UI: the sandbox lets a recruiter say "for this JD, ranking facets matter
+    double, code-quality matters half"). Each facet's cosine is multiplied by
+    its weight before max + top-K aggregation, so a high-weight facet that the
+    candidate hits hard can outvote a low-weight facet that they happen to
+    match perfectly. When ``None`` every facet has weight 1.0 — identical to
+    the previous behavior.
+
+    The breadth term used to be the mean over ALL facets, which drags a real
+    specialist (strong on 3 facets, near-zero on 7) below a generalist with
+    weak coverage everywhere. We now average only the top-K best facets (K=4
+    of 10) so depth on a few directly-relevant facets isn't diluted by tail
+    facets the JD lists for completeness.
     """
     cos = cand_emb.astype(np.float32) @ facet_emb.T  # (N, F)
-    return 0.6 * cos.max(axis=1) + 0.4 * cos.mean(axis=1)
+    if facet_weights is not None:
+        w = np.asarray(facet_weights, dtype=np.float32)
+        if w.shape != (cos.shape[1],):
+            raise ValueError(f"facet_weights shape {w.shape} != ({cos.shape[1]},) facet count")
+        cos = cos * w[None, :]
+    n_facets = cos.shape[1]
+    k = min(TOP_K_FACETS, n_facets)
+    if k >= n_facets:
+        # all facets in -> top-K mean degenerates to plain mean
+        top_k_mean = cos.mean(axis=1)
+    else:
+        # np.partition: top-k unordered in the last k columns, O(N) vs sort's O(N log N)
+        top_k_mean = np.partition(cos, -k, axis=1)[:, -k:].mean(axis=1)
+    return 0.6 * cos.max(axis=1) + 0.4 * top_k_mean
 
 
 def normalize_semantic(
@@ -83,7 +116,12 @@ def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
     la = loader.parse_date(sig.get("last_active_date"))
     if la:
         days = (REFERENCE_DATE - la).days
-        if days <= b["active_recent_days"]:
+        # Skip rather than reward a future-dated last_active (honeypot signal
+        # picked up separately). Without this guard a synthetic profile with
+        # last_active_date = 2030 lands days < 0 and earns the recent-active bonus.
+        if days < 0:
+            pass
+        elif days <= b["active_recent_days"]:
             delta += 0.05
             facts.append(f"active {days}d ago")
         elif days >= b["active_stale_days"]:

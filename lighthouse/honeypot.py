@@ -126,6 +126,15 @@ def detect(raw: dict) -> tuple[bool, list[str]]:
     if signup and signup > REFERENCE_DATE:
         reasons.append(f"Redrob signup_date {signup.isoformat()} is in the future")
 
+    # --- 9. Redrob last_active_date in the future ---
+    # Same logic as signup_date: a profile cannot have been "active" after the
+    # JD reference "now". Catches synthetic profiles that game the activity
+    # bonus by stamping a far-future last_active and would otherwise sneak the
+    # +0.05 "active 0d ago" lift through behavioral_modifier.
+    last_active = loader.parse_date(sig.get("last_active_date"))
+    if last_active and last_active > REFERENCE_DATE:
+        reasons.append(f"Redrob last_active_date {last_active.isoformat()} is in the future")
+
     return (len(reasons) > 0, reasons)
 
 

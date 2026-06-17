@@ -36,6 +36,8 @@ artifacts/_emb_partial.npy
 artifacts/_progress.json
 artifacts/precompute.log
 artifacts/*.tmp
+# Live sandbox override state (facets/experience curve edits made via the UI)
+artifacts/sandbox_overrides.json
 
 # ---- Local scratch ----
 scratch/

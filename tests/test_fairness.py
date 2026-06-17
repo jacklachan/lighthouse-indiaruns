@@ -236,6 +236,270 @@ def test_behavior_ignores_negative_sentinel_on_new_signals(rubric):
         assert not any(forbidden in f for f in facts), facts
 
 
+def test_behavior_ignores_future_last_active_date(rubric):
+    """A future-dated last_active must not earn the +0.05 recent-activity bonus.
+    Pre-fix days = REFERENCE_DATE - future_date was negative and slid into the
+    'days <= active_recent_days' branch."""
+    c = make_candidate(redrob_signals={"last_active_date": "2030-01-01"})
+    _, facts = scoring.behavioral_modifier(c, rubric)
+    assert not any("active" in f and "0d" in f for f in facts), facts
+
+
+def test_honeypot_flags_future_last_active_date():
+    raw = {
+        "candidate_id": "CAND_FAKE",
+        "profile": {"years_of_experience": 5.0},
+        "career_history": [],
+        "education": [],
+        "skills": [],
+        "redrob_signals": {"last_active_date": "2030-01-01"},
+    }
+    is_hp, reasons = honeypot.detect(raw)
+    assert is_hp
+    assert any("last_active_date" in r for r in reasons)
+
+
+def test_unbacked_expertise_gate_fires_on_keyword_stuffer(rubric):
+    """5+ expert/advanced skills with NONE appearing in any career description
+    or summary -> classic keyword-stuffer pattern; gate dampens (not zeros)."""
+    c = make_candidate(
+        profile={"summary": "Backend engineer with data pipeline experience."},
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "Backend Engineer",
+                "start_date": "2020-01-01",
+                "end_date": None,
+                "duration_months": 60,
+                "is_current": True,
+                "industry": "SaaS",
+                "company_size": "1001-5000",
+                "description": "Maintained Kafka and Spark Streaming pipelines for telemetry.",
+            }
+        ],
+        skills=[
+            {"name": "NLP", "proficiency": "advanced", "endorsements": 5, "duration_months": 12},
+            {
+                "name": "Embeddings",
+                "proficiency": "expert",
+                "endorsements": 8,
+                "duration_months": 14,
+            },
+            {"name": "FAISS", "proficiency": "advanced", "endorsements": 3, "duration_months": 6},
+            {
+                "name": "Pinecone",
+                "proficiency": "advanced",
+                "endorsements": 2,
+                "duration_months": 8,
+            },
+            {
+                "name": "Fine-tuning LLMs",
+                "proficiency": "expert",
+                "endorsements": 4,
+                "duration_months": 10,
+            },
+        ],
+    )
+    text = gates._career_text(c)
+    mult, reason = gates.gate_unbacked_expertise(c, rubric, text)
+    assert mult < 1.0, (mult, reason)
+    assert "expert-claimed" in reason
+
+
+def test_unbacked_expertise_gate_silent_when_skill_appears_in_role(rubric):
+    """If even one of the claimed expert skills surfaces in a role description
+    the gate should NOT fire — honest candidates omit some terms from bios but
+    not all of them."""
+    c = make_candidate(
+        skills=[
+            {"name": "NLP", "proficiency": "advanced", "endorsements": 5, "duration_months": 12},
+            {
+                "name": "Embeddings",
+                "proficiency": "expert",
+                "endorsements": 8,
+                "duration_months": 14,
+            },
+            {"name": "FAISS", "proficiency": "advanced", "endorsements": 3, "duration_months": 6},
+            {
+                "name": "Pinecone",
+                "proficiency": "advanced",
+                "endorsements": 2,
+                "duration_months": 8,
+            },
+            {
+                "name": "Fine-tuning LLMs",
+                "proficiency": "expert",
+                "endorsements": 4,
+                "duration_months": 10,
+            },
+        ],
+        career_history=[
+            {
+                "company": "Swiggy",
+                "title": "ML Engineer",
+                "start_date": "2020-01-01",
+                "end_date": None,
+                "duration_months": 60,
+                "is_current": True,
+                "industry": "Internet",
+                "company_size": "5001-10000",
+                "description": "Owned NLP-based query understanding for search.",
+            }
+        ],
+    )
+    text = gates._career_text(c)
+    mult, _ = gates.gate_unbacked_expertise(c, rubric, text)
+    assert mult == 1.0
+
+
+def test_unbacked_expertise_silent_below_threshold(rubric):
+    """Fewer than 5 expert claims -> gate doesn't fire (sparse-but-honest)."""
+    c = make_candidate(
+        skills=[
+            {"name": "NLP", "proficiency": "expert", "endorsements": 5, "duration_months": 12},
+            {
+                "name": "Embeddings",
+                "proficiency": "expert",
+                "endorsements": 8,
+                "duration_months": 14,
+            },
+        ],
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "Backend Engineer",
+                "start_date": "2020-01-01",
+                "end_date": None,
+                "duration_months": 60,
+                "is_current": True,
+                "industry": "SaaS",
+                "company_size": "1001-5000",
+                "description": "Built data pipelines.",
+            }
+        ],
+    )
+    text = gates._career_text(c)
+    mult, _ = gates.gate_unbacked_expertise(c, rubric, text)
+    assert mult == 1.0
+
+
+def test_career_evidence_rewards_recent_consistency(rubric):
+    """Same role mix, but one candidate's strong-term roles are recent and the
+    other's are 10 years stale. The recent one must score strictly higher."""
+    recent_career = [
+        {
+            "company": "Swiggy",
+            "title": "ML Engineer",
+            "start_date": "2024-01-01",
+            "end_date": None,
+            "duration_months": 24,
+            "is_current": True,
+            "industry": "Internet",
+            "company_size": "5001-10000",
+            "description": "Built ranking, search, embeddings, retrieval, personalization at scale.",
+        },
+        {
+            "company": "Flipkart",
+            "title": "ML Engineer",
+            "start_date": "2022-01-01",
+            "end_date": "2024-01-01",
+            "duration_months": 24,
+            "is_current": False,
+            "industry": "E-commerce",
+            "company_size": "5001-10000",
+            "description": "Shipped ranking + recommendation systems.",
+        },
+    ]
+    stale_career = [
+        {
+            "company": "Swiggy",
+            "title": "Engineer",
+            "start_date": "2014-01-01",
+            "end_date": "2016-01-01",
+            "duration_months": 24,
+            "is_current": False,
+            "industry": "Internet",
+            "company_size": "5001-10000",
+            "description": "Built ranking, search, embeddings, retrieval, personalization at scale.",
+        },
+        {
+            "company": "Flipkart",
+            "title": "Engineer",
+            "start_date": "2016-01-01",
+            "end_date": "2018-01-01",
+            "duration_months": 24,
+            "is_current": False,
+            "industry": "E-commerce",
+            "company_size": "5001-10000",
+            "description": "Shipped ranking + recommendation systems.",
+        },
+    ]
+    recent = features.career_evidence(make_candidate(career_history=recent_career), rubric)
+    stale = features.career_evidence(make_candidate(career_history=stale_career), rubric)
+    assert recent > stale
+
+
+def test_career_evidence_one_strong_old_role_still_counts(rubric):
+    """A single foundational shipped system from 10 years ago is real evidence;
+    the max term is undecayed so a veteran is not punished for tenure."""
+    veteran = make_candidate(
+        career_history=[
+            {
+                "company": "Flipkart",
+                "title": "ML Engineer",
+                "start_date": "2012-01-01",
+                "end_date": "2014-01-01",
+                "duration_months": 24,
+                "is_current": False,
+                "industry": "E-commerce",
+                "company_size": "5001-10000",
+                "description": "Shipped ranking, search, retrieval, embeddings, recommendation, learning to rank.",
+            },
+            {
+                "company": "Acme",
+                "title": "Manager",
+                "start_date": "2014-01-01",
+                "end_date": None,
+                "duration_months": 100,
+                "is_current": True,
+                "industry": "Consulting",
+                "company_size": "201-500",
+                "description": "team management",
+            },
+        ]
+    )
+    score = features.career_evidence(veteran, rubric)
+    # max term ~ 1.0 * 0.65 = 0.65; recency-weighted mean term is small but
+    # non-negative, so the overall score should still clearly reflect real
+    # past evidence.
+    assert score >= 0.55
+
+
+def test_seniority_level_uses_word_boundaries(rubric):
+    """Title-chaser gate compares ``_seniority_level`` deltas, so a substring
+    false-positive on 'leading' could fake an escalation pattern."""
+    assert gates._seniority_level("Leading Engineer (Specialist)") == 0
+    assert gates._seniority_level("Lead Engineer") == 2
+    assert gates._seniority_level("Senior Engineer") == 1
+    assert gates._seniority_level("Sr. ML Engineer") == 1
+    assert gates._seniority_level("Engineering Manager") == 2
+    assert gates._seniority_level("Head of Search") == 3
+    assert gates._seniority_level("Principal Scientist") == 3
+
+
+def test_is_services_company_robust_to_rubric_reorder():
+    """The lookup must work regardless of where services_only sits in the
+    hard_negatives list — guards against a positional [0] regression."""
+    rub = {
+        "hard_negatives": [
+            {"key": "title_chaser"},  # deliberately not services_only
+            {"key": "services_only", "companies": ["foo services"]},
+        ]
+    }
+    assert features.is_services_company("Foo Services Pvt Ltd", rub)
+    assert not features.is_services_company("Flipkart", rub)
+
+
 def test_honeypot_flags_future_signup_date():
     raw = {
         "candidate_id": "CAND_FAKE",
@@ -347,12 +611,12 @@ def test_trust_skills_bumped_by_certs(rubric):
 
 
 def test_near_miss_clause_fires_on_services_borderline(rubric):
-    """A candidate with 9/10 roles at services firms does NOT trip the
-    services_only gate (needs all roles), but the reasoning should call
-    out the close call."""
+    """A candidate with services_fraction in the near-miss band [0.7, 0.85)
+    does NOT trip the ramped services_only gate but should be flagged as a
+    close call in the reasoning."""
     services_terms = ["Infosys", "TCS", "Wipro", "Cognizant", "Accenture"]
     career = []
-    for co in services_terms * 2:  # 10 roles, all services
+    for co in services_terms * 2:  # 10 roles, will overwrite some to product
         career.append(
             {
                 "company": co,
@@ -366,16 +630,155 @@ def test_near_miss_clause_fires_on_services_borderline(rubric):
                 "description": "",
             }
         )
-    # last role at a product co -> services_fraction = 0.9, not 1.0
+    # 8/10 services, 2/10 product -> services_fraction = 0.8 (in near-miss band)
     career[-1]["company"] = "Swiggy"
+    career[-2]["company"] = "Flipkart"
     c = make_candidate(career_history=career)
     rec = scoring.score_candidate(c, rubric, semantic_fit=0.5)
     rec["rank"] = 30
     neighbor = scoring.score_candidate(make_candidate(), rubric, semantic_fit=0.5)
     neighbor["rank"] = 29
     text = reasoning.generate(c, rubric, rec, context={"neighbor": neighbor})
+    assert rec["gate_mult"] == 1.0, "near-miss test candidate should not have fired gate"
     assert "close call" in text.lower(), text
     assert "services_fraction" in text.lower()
+
+
+def test_services_gate_ramps_on_partial_services_career(rubric):
+    """9/10 services + 1/10 product was previously unpenalized; now sits on
+    the ramp between full-rubric penalty (0.45) and no penalty (1.0)."""
+    services_co = ["Infosys", "TCS", "Wipro", "Cognizant", "Accenture"]
+    career = []
+    for co in services_co * 2:
+        career.append(
+            {
+                "company": co,
+                "title": "Software Engineer",
+                "start_date": "2018-01-01",
+                "end_date": "2019-01-01",
+                "duration_months": 12,
+                "is_current": False,
+                "industry": "IT Services",
+                "company_size": "1001-5000",
+                "description": "",
+            }
+        )
+    career[-1]["company"] = "Swiggy"  # services_fraction = 0.9
+    c = make_candidate(career_history=career)
+    text = gates._career_text(c)
+    mult, reason = gates.gate_services_only(c, rubric, text)
+    # 0.9 sits 1/3 of the way up the [0.85, 1.0] ramp; multiplier should be
+    # between the rubric penalty (0.45) and 1.0, strictly less than 1.
+    assert 0.45 < mult < 1.0, (mult, reason)
+    assert "services" in reason.lower()
+
+
+def test_services_gate_silent_when_one_real_product_role(rubric):
+    """JD says someone at a services firm with prior product experience is
+    fine. 5/10 product roles -> services_fraction = 0.5 -> no penalty."""
+    career = []
+    for co in ["Infosys", "TCS", "Wipro", "Cognizant", "Accenture"]:
+        career.append(
+            {
+                "company": co,
+                "title": "Software Engineer",
+                "start_date": "2018-01-01",
+                "end_date": "2019-01-01",
+                "duration_months": 12,
+                "is_current": False,
+                "industry": "IT Services",
+                "company_size": "1001-5000",
+                "description": "",
+            }
+        )
+    for co in ["Swiggy", "Flipkart", "Zomato", "Razorpay", "PhonePe"]:
+        career.append(
+            {
+                "company": co,
+                "title": "ML Engineer",
+                "start_date": "2020-01-01",
+                "end_date": "2021-01-01",
+                "duration_months": 12,
+                "is_current": False,
+                "industry": "Internet",
+                "company_size": "1001-5000",
+                "description": "",
+            }
+        )
+    c = make_candidate(career_history=career)
+    text = gates._career_text(c)
+    mult, _ = gates.gate_services_only(c, rubric, text)
+    assert mult == 1.0
+
+
+def test_research_gate_does_not_fire_on_phd_with_product_career(rubric):
+    """A published PhD with a real product-co role must NOT trip the
+    research_only gate. Pre-fix the gate fired on research>=2 (trivial:
+    'PhD' + 'publication') with no 'production' literal in the bio,
+    even when career history showed a clear product employer."""
+    c = make_candidate(
+        profile={
+            "summary": "PhD in machine learning, published two papers on retrieval.",
+            "current_title": "Applied Scientist",
+            "current_company": "Flipkart",
+        },
+        career_history=[
+            {
+                "company": "Flipkart",
+                "title": "Applied Scientist",
+                "start_date": "2022-01-01",
+                "end_date": None,
+                "duration_months": 30,
+                "is_current": True,
+                "industry": "E-commerce",
+                "company_size": "5001-10000",
+                "description": "Worked on ranking models and embeddings.",
+            }
+        ],
+    )
+    text = gates._career_text(c)
+    mult, reason = gates.gate_research_only(c, rubric, text)
+    assert mult == 1.0, f"PhD + product career fired research gate: {reason}"
+
+
+def test_research_gate_still_fires_on_pure_academic(rubric):
+    """Postdoc with thesis + publications + academic, no product career, no
+    production language -> gate must still apply the 0.55 penalty."""
+    c = make_candidate(
+        profile={
+            "summary": "Postdoc with thesis on language models, multiple publications.",
+            "current_title": "Postdoc Researcher",
+            "current_company": "IIT Bombay",
+        },
+        career_history=[
+            {
+                "company": "IIT Bombay",
+                "title": "Postdoc Researcher",
+                "start_date": "2022-01-01",
+                "end_date": None,
+                "duration_months": 30,
+                "is_current": True,
+                "industry": "Academia",
+                "company_size": "10001+",
+                "description": "Academic research on retrieval models; published papers at top venues.",
+            },
+            {
+                "company": "IIT Bombay",
+                "title": "Research Scholar",
+                "start_date": "2018-01-01",
+                "end_date": "2022-01-01",
+                "duration_months": 48,
+                "is_current": False,
+                "industry": "Academia",
+                "company_size": "10001+",
+                "description": "PhD work on retrieval; thesis defended.",
+            },
+        ],
+    )
+    text = gates._career_text(c)
+    mult, reason = gates.gate_research_only(c, rubric, text)
+    assert mult < 1.0
+    assert "research" in reason.lower()
 
 
 def test_honeypot_still_flags_explicit_zero_duration_expert_claims():

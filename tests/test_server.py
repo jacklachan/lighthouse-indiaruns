@@ -146,3 +146,146 @@ def test_rank_rejects_skip_gates_not_a_list() -> None:
         json={"use_sample": True, "skip_gates": "location_visa"},
     )
     assert r.status_code in (400, 422)
+
+
+def test_facets_endpoint_returns_defaults() -> None:
+    r = client.get("/api/facets")
+    assert r.status_code == 200
+    body = r.json()
+    assert "facets" in body and isinstance(body["facets"], list)
+    assert "facet_weights" in body
+    assert "default_facets" in body
+    assert len(body["facets"]) == len(body["facet_weights"]) == len(body["default_facets"])
+
+
+def test_facets_endpoint_rejects_too_few() -> None:
+    r = client.post("/api/facets", json={"facets": ["only one"]})
+    assert r.status_code == 400
+
+
+def test_facets_endpoint_rejects_too_many() -> None:
+    r = client.post("/api/facets", json={"facets": ["x"] * 30})
+    assert r.status_code == 400
+
+
+def test_facets_endpoint_rejects_weight_length_mismatch() -> None:
+    r = client.post(
+        "/api/facets",
+        json={"facets": ["a", "b", "c"], "facet_weights": [1.0, 2.0]},
+    )
+    assert r.status_code == 400
+
+
+def test_facets_endpoint_rejects_negative_weight() -> None:
+    r = client.post(
+        "/api/facets",
+        json={"facets": ["a", "b", "c"], "facet_weights": [1.0, -0.5, 1.0]},
+    )
+    assert r.status_code == 400
+
+
+def test_experience_endpoint_returns_defaults() -> None:
+    r = client.get("/api/experience")
+    assert r.status_code == 200
+    body = r.json()
+    for k in ("band_min", "band_max", "ideal_min", "ideal_max", "default"):
+        assert k in body
+
+
+def test_experience_endpoint_rejects_inverted_band() -> None:
+    r = client.post(
+        "/api/experience",
+        json={"band_min": 10.0, "band_max": 4.0, "ideal_min": 5.0, "ideal_max": 7.0},
+    )
+    assert r.status_code == 400
+
+
+def test_experience_endpoint_accepts_valid_override() -> None:
+    r = client.post(
+        "/api/experience",
+        json={"band_min": 3.0, "band_max": 7.0, "ideal_min": 4.0, "ideal_max": 6.0},
+    )
+    assert r.status_code == 200
+    # restore for downstream tests
+    client.post("/api/reset")
+
+
+def test_reset_endpoint_returns_ok() -> None:
+    r = client.post("/api/reset")
+    assert r.status_code == 200
+    assert r.json() == {"reset": True}
+
+
+def test_similar_endpoint_rejects_unknown_candidate() -> None:
+    r = client.post(
+        "/api/similar",
+        json={"use_sample": True, "candidate_id": "CAND_DOES_NOT_EXIST", "limit": 5},
+    )
+    assert r.status_code == 404
+
+
+def test_similar_endpoint_rejects_bad_limit() -> None:
+    r = client.post(
+        "/api/similar",
+        json={"use_sample": True, "candidate_id": "CAND_0000031", "limit": 0},
+    )
+    assert r.status_code == 400
+
+
+def test_gates_catalog_includes_unbacked_expertise() -> None:
+    r = client.get("/api/gates")
+    assert r.status_code == 200
+    keys = {g["key"] for g in r.json()["gates"]}
+    assert "unbacked_expertise" in keys
+
+
+def test_facets_from_text_extracts_bullets() -> None:
+    jd = (
+        "Senior AI Engineer\n"
+        "- Production experience with embeddings-based retrieval and dense vector search.\n"
+        "- Built and shipped at least one end-to-end ranking or recommendation system.\n"
+        "- Strong Python engineering with attention to code quality and testing.\n"
+        "- Hybrid retrieval, learning-to-rank, and relevance evaluation frameworks.\n"
+    )
+    r = client.post("/api/facets_from_text", json={"text": jd})
+    assert r.status_code == 200
+    facets = r.json()["facets"]
+    assert 3 <= len(facets) <= 15
+    assert any("embeddings" in f.lower() for f in facets)
+
+
+def test_facets_from_text_rejects_empty() -> None:
+    r = client.post("/api/facets_from_text", json={"text": "Too short."})
+    assert r.status_code == 400
+
+
+def test_similar_pool_endpoint_returns_results() -> None:
+    r = client.post("/api/similar_pool", json={"candidate_id": "CAND_0000031", "limit": 5})
+    if r.status_code == 503:
+        # cand_emb.npy not present in this checkout; skip.
+        return
+    assert r.status_code == 200
+    body = r.json()
+    assert body["target"] == "CAND_0000031"
+    assert "pool_size" in body
+    assert 1 <= len(body["rows"]) <= 5
+    for row in body["rows"]:
+        assert row["candidate_id"] != "CAND_0000031"
+        assert 0.0 <= row["similarity"] <= 1.0
+
+
+def test_similar_pool_rejects_unknown() -> None:
+    r = client.post(
+        "/api/similar_pool",
+        json={"candidate_id": "CAND_BOGUS_ZZZ", "limit": 5},
+    )
+    # 404 when pool loaded, 503 when artifact missing — either is a valid rejection.
+    assert r.status_code in (404, 503)
+
+
+def test_similar_pool_rejects_bad_limit() -> None:
+    r = client.post(
+        "/api/similar_pool",
+        json={"candidate_id": "CAND_0000031", "limit": 0},
+    )
+    assert r.status_code in (400, 503)

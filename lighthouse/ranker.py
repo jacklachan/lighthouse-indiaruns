@@ -98,7 +98,9 @@ def score_all(
 ) -> list[dict]:
     rubric = art["rubric"]
     emb = _embeddings_for(raws, art, model_name)
-    sem_raw = scoring.raw_semantic_fit(emb, art["facet_emb"])
+    sem_raw = scoring.raw_semantic_fit(
+        emb, art["facet_emb"], facet_weights=art.get("facet_weights")
+    )
     sem_norm = scoring.normalize_semantic(sem_raw, art.get("sem_lo"), art.get("sem_hi"))
     records = []
     for raw, sf in zip(raws, sem_norm, strict=False):

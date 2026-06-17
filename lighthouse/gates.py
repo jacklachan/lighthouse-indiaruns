@@ -11,6 +11,7 @@ the product of multipliers and the list of fired reasons.
 
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 
 from . import features, loader
@@ -18,6 +19,29 @@ from .constants import REFERENCE_DATE
 
 _MIN_DATE = date(1900, 1, 1)
 _RECENT_CUTOFF = REFERENCE_DATE - timedelta(days=18 * 30)
+
+# Employer-name fragments and industry strings that indicate academia/research,
+# used by the research_only gate so a postdoc at "IIT Bombay" is not counted
+# as production deployment just because IIT is not on the services-firm list.
+_ACADEMIC_NAME_TERMS = (
+    "university",
+    "institute of technology",
+    "iit ",
+    "iim ",
+    "iisc",
+    "academia",
+    "research lab",
+    "national lab",
+)
+_ACADEMIC_INDUSTRY_TERMS = ("academia", "education", "research", "university")
+
+
+def _is_academic_employer(name: str, industry: str) -> bool:
+    n = (name or "").lower() + " "  # trailing space lets "iit " match end-of-string
+    i = (industry or "").lower()
+    return any(t in n for t in _ACADEMIC_NAME_TERMS) or any(
+        t in i for t in _ACADEMIC_INDUSTRY_TERMS
+    )
 
 
 def _career_text(raw: dict) -> str:
@@ -31,9 +55,13 @@ def _career_text(raw: dict) -> str:
 
 def _recent_career_text(raw: dict) -> str:
     """Concatenation of titles+descriptions from roles still active within the
-    last ~18 months (current roles always count). Used by the LangChain gate so
-    it actually enforces the 'recent only' clause from the rubric rule."""
-    parts: list[str] = []
+    last ~18 months (current roles always count), plus the candidate's profile
+    summary. Summary is included because it describes the candidate's *current*
+    self-presentation — a "Recently built LangChain prompt chains" line in the
+    summary is exactly the recent-wrapper signal the gate is meant to catch,
+    even if it never appears in a role description.
+    """
+    parts: list[str] = [loader._s(loader.get_profile(raw), "summary")]
     for h in loader.get_career(raw):
         if h["is_current"]:
             parts.append(h["title"] + " " + h["description"])
@@ -49,11 +77,33 @@ def _gate(rubric: dict, key: str) -> dict:
 
 
 def gate_services_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
+    """Multiplicative penalty for a career dominated by services/consulting firms.
+
+    Old behavior was a cliff at 1.0 (10/10 services = 0.45; 9/10 = 1.0), so a
+    single token product role neutralized the gate completely. The JD wording
+    is "in their entire career" — but 9 services roles + 1 token product role
+    is plainly closer to "entire" than to "balanced", so we ramp linearly:
+
+      * services_fraction <  0.85           -> no penalty (one+ real product role)
+      * services_fraction == 1.0            -> full rubric penalty (0.45)
+      * services_fraction in [0.85, 1.0)    -> linear ramp between the two
+
+    The 0.85 lower bound preserves the JD guidance that someone currently at a
+    services firm with prior product experience should not be penalized.
+    """
     g = _gate(rubric, "services_only")
-    if features.services_fraction(raw, rubric) >= 0.999 and loader.get_career(raw):
-        cur = loader._s(loader.get_profile(raw), "current_company")
+    career = loader.get_career(raw)
+    if not career:
+        return 1.0, ""
+    sf = features.services_fraction(raw, rubric)
+    if sf < 0.85:
+        return 1.0, ""
+    cur = loader._s(loader.get_profile(raw), "current_company")
+    if sf >= 0.999:
         return g["penalty"], f"entire career at services/consulting firms (e.g. {cur})"
-    return 1.0, ""
+    t = (sf - 0.85) / (1.0 - 0.85)
+    mult = round(1.0 + (g["penalty"] - 1.0) * t, 4)
+    return mult, f"{sf:.0%} of career at services/consulting firms (e.g. {cur})"
 
 
 def gate_location_visa(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
@@ -77,10 +127,25 @@ def gate_location_visa(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
 
 
 def gate_research_only(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
+    """Fire only on genuinely research-pure profiles.
+
+    Pre-fix: ``research >= 2 AND production == 0`` was trivially tripped by a
+    real product engineer with a PhD ("PhD" + "publication" = 2 research hits),
+    and the production check relied on candidates writing the literal words
+    "production"/"shipped"/"deployed". A career at any non-services product
+    company is itself production deployment, so we treat that as a structural
+    production signal independent of vocabulary.
+    """
     g = _gate(rubric, "research_only")
     research = features.count_hits(text, g["positive_terms"])
     production = features.count_hits(text, g["production_terms"])
-    if research >= 2 and production == 0:
+    has_product_role = any(
+        h["company"]
+        and not features.is_services_company(h["company"], rubric)
+        and not _is_academic_employer(h["company"], h["industry"])
+        for h in loader.get_career(raw)
+    )
+    if research >= 3 and production == 0 and not has_product_role:
         return g["penalty"], "research-heavy profile with no evident production deployment"
     return 1.0, ""
 
@@ -113,13 +178,38 @@ def gate_langchain_only_recent(raw: dict, rubric: dict, text: str) -> tuple[floa
     return 1.0, ""
 
 
+_LEVEL_3_WORDS = ("principal", "staff", "director", "vp", "distinguished")
+_LEVEL_2_WORDS = ("lead", "manager")
+_LEVEL_1_WORDS = ("senior", "sr")
+_WORD_RE_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _has_word(text: str, word: str) -> bool:
+    """Whole-word, case-insensitive match. Avoids 'lead' matching 'leading'."""
+    pat = _WORD_RE_CACHE.get(word)
+    if pat is None:
+        pat = re.compile(r"\b" + re.escape(word) + r"\b", re.IGNORECASE)
+        _WORD_RE_CACHE[word] = pat
+    return pat.search(text) is not None
+
+
 def _seniority_level(title: str) -> int:
+    """Coarse 0-3 seniority rank from a title.
+
+    Pre-fix this used substring matching, so 'leading product engineer' or
+    'engineering manager-track' would inflate the level via the 'lead'/'manager'
+    substring. The title_chaser gate compares level deltas, so a single
+    false-positive level shift could trip the escalation check on a steady
+    lateral career. Word-boundary matching removes those false positives.
+    """
     t = title.lower()
-    if any(k in t for k in ("principal", "staff", "director", "vp", "head of", "distinguished")):
+    if "head of" in t:
         return 3
-    if "lead" in t or "manager" in t:
+    if any(_has_word(t, w) for w in _LEVEL_3_WORDS):
+        return 3
+    if any(_has_word(t, w) for w in _LEVEL_2_WORDS):
         return 2
-    if "senior" in t or "sr." in t or "sr " in t:
+    if any(_has_word(t, w) for w in _LEVEL_1_WORDS):
         return 1
     return 0
 
@@ -150,6 +240,55 @@ def gate_title_chaser(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     return 1.0, ""
 
 
+_UNBACKED_DEFAULT_MIN = 5
+_UNBACKED_DEFAULT_PENALTY = 0.65
+
+
+def gate_unbacked_expertise(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
+    """Fire on the canonical keyword-stuffer trap: many advanced/expert skill
+    claims with NONE of them appearing in any career role title/description or
+    profile summary. A real practitioner uses their expert skills on the job
+    and writes about it; a stuffer just lists keywords.
+
+    Multiplicative penalty (not zero) — the dampen-don't-annihilate rule that
+    distinguishes gates from honeypots. Configurable via the rubric:
+    ``rubric['hard_negatives'][key='unbacked_expertise']`` may supply
+    ``min_expert_claims`` and ``penalty``; defaults are 5 and 0.65.
+    """
+    g: dict = next(
+        (x for x in rubric.get("hard_negatives", []) if x.get("key") == "unbacked_expertise"),
+        {},
+    )
+    min_claims = int(g.get("min_expert_claims", _UNBACKED_DEFAULT_MIN))
+    penalty = float(g.get("penalty", _UNBACKED_DEFAULT_PENALTY))
+
+    raw_skills = raw.get("skills") or []
+    expert_skills: list[str] = []
+    for s in raw_skills:
+        if not isinstance(s, dict):
+            continue
+        prof = (s.get("proficiency") or "").lower()
+        if prof in ("advanced", "expert"):
+            name = str(s.get("name") or "").strip()
+            if name:
+                expert_skills.append(name)
+    if len(expert_skills) < min_claims:
+        return 1.0, ""
+
+    p = loader.get_profile(raw)
+    haystack = (loader._s(p, "summary") + " ").lower()
+    for h in loader.get_career(raw):
+        haystack += (h["title"] + " " + h["description"] + " ").lower()
+    ungrounded = [name for name in expert_skills if name.lower() not in haystack]
+    if len(ungrounded) != len(expert_skills):
+        return 1.0, ""
+    return (
+        penalty,
+        f"{len(expert_skills)} expert-claimed skills never appear in any role "
+        f"description or summary (e.g. {', '.join(expert_skills[:3])})",
+    )
+
+
 def gate_non_technical_role(raw: dict, rubric: dict, text: str) -> tuple[float, str]:
     g = _gate(rubric, "non_technical_role")
     p = loader.get_profile(raw)
@@ -174,6 +313,7 @@ GATES: list[tuple[str, object]] = [
     ("cv_speech_only", gate_cv_speech_only),
     ("langchain_only_recent", gate_langchain_only_recent),
     ("title_chaser", gate_title_chaser),
+    ("unbacked_expertise", gate_unbacked_expertise),
 ]
 
 GATE_KEYS: set[str] = {key for key, _ in GATES}
