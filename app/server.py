@@ -259,6 +259,8 @@ def _rank(
                 "country": loader._s(p, "country"),
                 "yrs": loader._f(p, "years_of_experience"),
                 "honeypot": bool(rec["honeypot"]),
+                "gate_mult": rec["gate_mult"],
+                "gate_reasons": rec["gate_reasons"],
                 "reasoning": reasoning.generate(raw, rubric, rec, context=context),
             }
         )

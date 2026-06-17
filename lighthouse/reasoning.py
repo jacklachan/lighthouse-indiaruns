@@ -230,6 +230,30 @@ def _confidence_clause(comps: dict, rubric: dict, record: dict, band: str) -> st
     return f" Score driven by {label} ({val:.2f})."
 
 
+def _near_miss_clause(raw: dict, rubric: dict, record: dict) -> str:
+    """Surface a gate that almost fired but didn't, plus its margin.
+
+    Useful for "close call" candidates: a recruiter scanning the table can
+    see this row is one mid-tenure or one services-firm role away from a
+    dampening penalty. Returns "" when nothing is close to firing.
+    """
+    if record.get("gate_reasons") or record.get("honeypot"):
+        return ""  # already-explained concerns dominate
+    msgs: list[str] = []
+    # services_only nearly: >= 0.7 of roles at a services firm but not the
+    # 0.999 the gate requires.
+    sf = features.services_fraction(raw, rubric)
+    if 0.7 <= sf < 0.999:
+        msgs.append(f"services_fraction {sf:.2f} (gate fires at 1.00)")
+    # title_chaser nearly: 3 roles with short avg tenure (gate wants >=4).
+    stats = features.tenure_stats(raw)
+    if stats["n_roles"] == 3 and 0 < stats["avg_tenure_months"] < 20:
+        msgs.append(f"3 roles averaging {stats['avg_tenure_months']:.0f}mo (gate fires at 4 roles)")
+    if not msgs:
+        return ""
+    return " Close call: " + msgs[0] + "."
+
+
 def _contrastive_clause(record: dict, context: dict) -> str:
     """One-line ' vs. peer' grounded in the per-component delta."""
     neighbor = context.get("neighbor")
@@ -280,6 +304,7 @@ def generate(raw: dict, rubric: dict, record: dict, context: dict | None = None)
 
     if context is not None:
         text += _confidence_clause(comps, rubric, record, band)
+        text += _near_miss_clause(raw, rubric, record)
         text += _contrastive_clause(record, context)
 
     return " ".join(text.split()).strip()

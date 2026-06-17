@@ -13,6 +13,20 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
+  function gateShortLabel(reason) {
+    // Map the long gate-reason text emitted by lighthouse/gates.py to a short
+    // 1-2 word badge label. Keeps the full reason on hover via title=.
+    var r = (reason || "").toLowerCase();
+    if (r.indexOf("services/consulting") >= 0) return "services-only";
+    if (r.indexOf("relocate") >= 0 || r.indexOf("visa") >= 0) return "location";
+    if (r.indexOf("research-heavy") >= 0) return "research";
+    if (r.indexOf("computer vision") >= 0 || r.indexOf("speech") >= 0) return "cv/speech";
+    if (r.indexOf("langchain") >= 0 || r.indexOf("wrapper") >= 0) return "wrapper-only";
+    if (r.indexOf("title-chaser") >= 0 || r.indexOf("job-hopping") >= 0) return "title-chaser";
+    if (r.indexOf("non-engineering") >= 0) return "non-technical";
+    return "gate";
+  }
+
   /* ------------------------------------------------------------------ *
    *  Hero beam + decorative dots
    * ------------------------------------------------------------------ */
@@ -247,11 +261,21 @@
       var tr = document.createElement("tr");
       var rankCls = r.rank === 1 ? "rank-pill top" : "rank-pill";
       var hp = r.honeypot ? ' <span class="hp-badge">⚠ honeypot</span>' : "";
+      // Per-row gate badges: each fired hard-negative shown as a small chip
+      // with the multiplier so a recruiter scanning the table can see WHICH
+      // gates dampened each candidate without expanding the breakdown.
+      var gateChips = "";
+      if (r.gate_reasons && r.gate_reasons.length) {
+        gateChips = ' <span class="gate-chips">' + r.gate_reasons.map(function (g) {
+          var label = gateShortLabel(g);
+          return '<span class="gate-chip" title="' + esc(g) + '">' + esc(label) + '</span>';
+        }).join("") + "</span>";
+      }
       tr.innerHTML =
         '<td><span class="' + rankCls + '">' + r.rank + "</span></td>" +
         '<td><div class="cid">' + esc(r.candidate_id) + "</div>" +
           '<div class="score-bar"><span style="right:' + (100 - Math.max(0, Math.min(1, r.score)) * 100).toFixed(1) + '%"></span></div></td>' +
-        '<td><div>' + esc(r.title || "—") + hp + '</div><div class="muted-cell">' + esc(r.country || "") + "</div></td>" +
+        '<td><div>' + esc(r.title || "—") + hp + gateChips + '</div><div class="muted-cell">' + esc(r.country || "") + "</div></td>" +
         '<td class="muted-cell">' + (r.yrs != null ? r.yrs : "—") + "</td>" +
         '<td class="reason-cell">' + esc(r.reasoning || "") + "</td>";
       tbody.appendChild(tr);

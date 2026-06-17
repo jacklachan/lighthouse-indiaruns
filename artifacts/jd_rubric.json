@@ -173,6 +173,14 @@
     "marketing", "seo", "project management"
   ],
 
+  "cert_terms": [
+    "machine learning", "ml ", "deep learning", "ai ", "artificial intelligence",
+    "data science", "data engineer", "pytorch", "tensorflow", "nlp",
+    "mlops", "google cloud ml", "aws certified machine learning",
+    "azure ai", "databricks", "hugging face", "kaggle"
+  ],
+  "cert_rationale": "JD treats credentials as a trust signal, not a credential check. Certifications field was previously unread; we now add a small additive bump to trust_skills when a candidate holds AI/ML-adjacent certs. Capped so a single cert nudges, three saturates; cannot rescue an otherwise-empty profile.",
+
   "component_weights": {
     "_comment": "Base weighted sum of the five components, tuned on the Claude-authored eval set to maximise NDCG@10. role_coherence + career_evidence dominate because they are what separate true fits from keyword-stuffers.",
     "semantic_fit": 0.22,

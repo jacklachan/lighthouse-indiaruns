@@ -205,14 +205,41 @@ def experience_fit(raw: dict, rubric: dict) -> float:
 # ---------------------------------------------------------------------------
 
 
+def cert_signal(raw: dict, rubric: dict) -> float:
+    """Small in-[0,1] credit for AI/ML-adjacent certifications.
+
+    Reads the `certifications` field (previously unused). Each cert whose
+    name contains one of the rubric's `cert_terms` counts; the saturation
+    is set so one cert nudges, ~3 maxes out. Issuer + year are surfaced in
+    the test grounding map but not required to match anything — names alone
+    are the signal."""
+    certs = raw.get("certifications") or []
+    terms = rubric.get("cert_terms", [])
+    if not certs or not terms:
+        return 0.0
+    hits = 0
+    for c in certs:
+        if not isinstance(c, dict):
+            continue
+        name = (c.get("name") or "").lower()
+        if any(t in name for t in terms):
+            hits += 1
+    if hits == 0:
+        return 0.0
+    return round(min(1.0, hits / 3.0), 4)
+
+
 def trust_skills(raw: dict, rubric: dict) -> float:
     """Skills weighted by proficiency x duration x endorsements x assessment,
-    counting only JD-relevant skills. Saturating. [0,1]
+    counting only JD-relevant skills, plus a small bump for AI/ML certs.
+    Saturating. [0,1]
 
     This is what makes keyword-stuffing structurally worthless: an 'expert'
     skill with 0 months, no endorsements and a low Redrob assessment contributes
     almost nothing. Missing assessment is NEUTRAL (76% of pool has none).
-    """
+    Certifications give a small additive bump (cap 0.10) so a credential
+    cannot rescue an empty profile but a well-credentialed engineer is
+    correctly recognised over an indistinguishable peer."""
     skills = loader.get_skills(raw)
     if not skills:
         return 0.0
@@ -249,7 +276,9 @@ def trust_skills(raw: dict, rubric: dict) -> float:
         trust_sum += prof * dur_w * end_w * assess_w * rel_w
 
     # saturate: ~3 well-backed relevant skills -> ~0.78
-    return round(1.0 - math.exp(-trust_sum / 2.0), 4)
+    base = 1.0 - math.exp(-trust_sum / 2.0)
+    cert_bump = 0.10 * cert_signal(raw, rubric)
+    return round(min(1.0, base + cert_bump), 4)
 
 
 # ---------------------------------------------------------------------------

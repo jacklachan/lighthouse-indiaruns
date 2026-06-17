@@ -6,7 +6,7 @@ re-introduce the original unfair behavior.
 
 from __future__ import annotations
 
-from lighthouse import features, gates, honeypot, scoring
+from lighthouse import features, gates, honeypot, reasoning, scoring
 from tests.conftest import make_candidate
 
 # ---------------------------------------------------------------------------
@@ -309,6 +309,73 @@ def test_education_signal_does_not_overpower_negative_title(rubric):
     # Accountant cur + Accountant hist -> 0.05 each, plus 0.10*1.0 education.
     # 0.55*0.05 + 0.35*0.05 + 0.10*1.0 = 0.145. Still strongly sub-fit.
     assert score < 0.20
+
+
+def test_cert_signal_picks_up_ai_certs(rubric):
+    raw = make_candidate(
+        certifications=[
+            {"name": "AWS Certified Machine Learning", "issuer": "Amazon", "year": 2024},
+            {"name": "Deep Learning Specialization", "issuer": "deeplearning.ai", "year": 2023},
+        ]
+    )
+    assert features.cert_signal(raw, rubric) > 0.5
+
+
+def test_cert_signal_ignores_unrelated_certs(rubric):
+    raw = make_candidate(
+        certifications=[
+            {"name": "Scrum Master Certified", "issuer": "Scrum Alliance", "year": 2024},
+            {"name": "PMP", "issuer": "PMI", "year": 2022},
+        ]
+    )
+    assert features.cert_signal(raw, rubric) == 0.0
+
+
+def test_trust_skills_bumped_by_certs(rubric):
+    plain = make_candidate(certifications=[])
+    credentialed = make_candidate(
+        certifications=[
+            {"name": "AWS Certified Machine Learning", "issuer": "Amazon", "year": 2024},
+            {"name": "TensorFlow Developer Certificate", "issuer": "Google", "year": 2023},
+        ]
+    )
+    p = features.trust_skills(plain, rubric)
+    c = features.trust_skills(credentialed, rubric)
+    assert c > p
+    # bump is capped at +0.10
+    assert (c - p) <= 0.10 + 1e-6
+
+
+def test_near_miss_clause_fires_on_services_borderline(rubric):
+    """A candidate with 9/10 roles at services firms does NOT trip the
+    services_only gate (needs all roles), but the reasoning should call
+    out the close call."""
+    services_terms = ["Infosys", "TCS", "Wipro", "Cognizant", "Accenture"]
+    career = []
+    for co in services_terms * 2:  # 10 roles, all services
+        career.append(
+            {
+                "company": co,
+                "title": "Software Engineer",
+                "start_date": "2018-01-01",
+                "end_date": "2019-01-01",
+                "duration_months": 12,
+                "is_current": False,
+                "industry": "IT Services",
+                "company_size": "1001-5000",
+                "description": "",
+            }
+        )
+    # last role at a product co -> services_fraction = 0.9, not 1.0
+    career[-1]["company"] = "Swiggy"
+    c = make_candidate(career_history=career)
+    rec = scoring.score_candidate(c, rubric, semantic_fit=0.5)
+    rec["rank"] = 30
+    neighbor = scoring.score_candidate(make_candidate(), rubric, semantic_fit=0.5)
+    neighbor["rank"] = 29
+    text = reasoning.generate(c, rubric, rec, context={"neighbor": neighbor})
+    assert "close call" in text.lower(), text
+    assert "services_fraction" in text.lower()
 
 
 def test_honeypot_still_flags_explicit_zero_duration_expert_claims():
