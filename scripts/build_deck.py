@@ -155,7 +155,7 @@ def main():
             ("Claude (offline) parsed the JD into a static committed rubric — read at rank-time with no API call.", 0),
         ],
         "Ranking Methodology": [
-            ("Retrieve: precomputed bge-small embeddings + BM25 over clean per-candidate text blobs (100K).", 0),
+            ("Retrieve: precomputed bge-small embeddings over clean per-candidate text blobs (100K). (A BM25 lexical index is built offline — optional, not loaded at rank-time.)", 0),
             ("Score, each in [0,1]: semantic_fit (cosine vs 10 JD facets), role_coherence (taxonomy+semantic), career_evidence (built ranking/search at product cos), experience_fit (soft 6–8 curve), trust_skills (proficiency×duration×endorsements×assessment).", 0),
             ("Combine: weighted base (role_coherence 0.26 & career_evidence 0.24 lead) × Π(hard-negative gates) × behavioral modifier [0.80–1.12]; honeypots → 0.", 0),
             ("final = base × gates × behavior. Order by score desc; ties → candidate_id ascending; take top 100.", 0),
@@ -180,7 +180,7 @@ def main():
         ],
         "Technologies Used": [
             ("sentence-transformers BAAI/bge-small-en-v1.5 — small, CPU-friendly, strong retrieval quality; precomputed so rank-time needs no model.", 0),
-            ("rank_bm25 — lexical recall signal complementing dense retrieval.", 0),
+            ("rank_bm25 — optional offline lexical index; precomputed but never loaded at rank-time (ranking is semantic + deterministic features).", 0),
             ("numpy / pandas — the entire rank step: fast, deterministic, dependency-light (fits the 5-min / 16 GB / CPU box).", 0),
             ("Claude (offline only) — JD→rubric parsing and eval labeling; never called at rank-time, no candidate data sent to any API.", 0),
             ("pytest (63 tests), FastAPI + vanilla JS + anime.js (HF sandbox), python-pptx + matplotlib (this deck).", 0),
