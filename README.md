@@ -28,7 +28,7 @@ signal in the submission; the metric tables in `eval/results.md` come **after**.
   non-technical.** The provided `sample_submission` (keyword count) puts HR Managers and
   Accountants at #1–20 — the exact trap the JD warns about.
 - **Trap resistance:** the keyword baseline puts **13/32 keyword-stuffers** in its top-25;
-  Lighthouse admits **0**. The plain-language Tier-5 `CAND_0000031` ranks **#1**.
+  Lighthouse admits **0**. The plain-language Tier-5 `CAND_0000031` ranks **top-10** (#9).
 
 Self-labeled NDCG/MAP numbers (composite **0.998 vs 0.553** baseline) live in
 [`eval/results.md`](eval/results.md) §2 — read them as **internal consistency**, not
@@ -116,7 +116,7 @@ we authored. Full detail in [`eval/results.md`](eval/results.md).
 - **Trap resistance:** the keyword baseline puts **13/32 keyword-stuffers** in its top-25;
   Lighthouse admits **0**. The two planted non-fits rank low for the right reasons
   (`CAND_0000001` Toronto/no-relocate; `CAND_0000002` Operations-Manager trajectory); the
-  plain-language Tier-5 `CAND_0000031` ranks #1.
+  plain-language Tier-5 `CAND_0000031` ranks in the top-10 (#9).
 
 **Directional metrics (self-labeled — *not* a claim of absolute accuracy):** against a
 Claude-authored 221-candidate proxy set, composite **0.998 vs 0.553** for the keyword baseline
