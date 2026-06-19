@@ -59,7 +59,9 @@ body {
 }
 
 /* ---------- layout ---------- */
-.wrap { width: min(1140px, 92vw); margin: 0 auto; }
+.wrap { width: min(1240px, 92vw); margin: 0 auto; }
+/* the interactive studio gets much more room than the narrative prose above it */
+#tool .wrap { width: min(1560px, 94vw); }
 section { position: relative; padding: 96px 0; }
 .eyebrow {
   font-family: var(--font-display);
@@ -258,7 +260,7 @@ thead th {
   text-transform: uppercase; color: var(--faint); background: rgba(255, 255, 255, 0.025);
   border-bottom: 1px solid var(--border); position: sticky; top: 0;
 }
-tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tbody td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr { transition: background 0.15s; }
 tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
@@ -270,7 +272,7 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
 .rank-pill.top { background: linear-gradient(135deg, rgba(246,181,61,0.25), rgba(245,158,11,0.12)); border-color: rgba(246,181,61,0.4); color: var(--amber); }
 .cid { font-family: var(--font-display); font-size: 13px; color: var(--text); }
 .muted-cell { color: var(--faint); font-size: 13px; }
-.reason-cell { color: var(--muted); font-size: 13px; max-width: 420px; }
+.reason-cell { color: var(--muted); font-size: 13px; line-height: 1.55; max-width: 600px; }
 .hp-badge {
   display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px;
   padding: 3px 9px; border-radius: 999px; color: var(--danger);
@@ -532,7 +534,7 @@ footer a:hover { color: var(--text); }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .nav-links { display: none; }
   .metrics { grid-template-columns: 1fr; }
-  .reason-cell { max-width: 220px; }
+  .reason-cell { max-width: 360px; }
   .mult-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
@@ -707,8 +709,8 @@ footer a:hover { color: var(--text); }
 /* ---------- two-column studio: controls left, live results right ---------- */
 .studio {
   display: grid;
-  grid-template-columns: minmax(360px, 430px) 1fr;
-  gap: 30px;
+  grid-template-columns: minmax(360px, 400px) 1fr;
+  gap: 34px;
   align-items: start;
 }
 .studio-controls { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
