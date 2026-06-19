@@ -167,28 +167,35 @@
             <span class="chev">▾</span>
           </summary>
           <div class="weights-body">
-            <p class="note">Replace the JD's 10 facets, retune the experience band, and re-rank against your own role spec. The encoder runs server-side; first save may take a few seconds.</p>
-            <div class="weights-grid">
+            <p class="note">Replace the JD's facets, reshape the experience band, and re-rank against your own role spec. The encoder runs server-side — the first save takes a few seconds.</p>
+            <div class="weights-grid discovery-grid">
               <div class="weights-col">
-                <div class="col-title">JD facets (one per line)</div>
-                <textarea id="facets-input" rows="8" class="facets-textarea" spellcheck="false"></textarea>
+                <div class="col-title">JD facets <span class="col-hint" id="facet-count"></span></div>
+                <textarea id="facets-input" rows="8" class="facets-textarea" spellcheck="false" placeholder="One facet per line — e.g. Production experience with vector search (FAISS, Qdrant)."></textarea>
                 <details class="prose-panel">
-                  <summary>📝 Paste a JD instead — auto-extract facets</summary>
+                  <summary>📝 Paste a full JD instead — auto-extract facets</summary>
                   <textarea id="prose-input" rows="6" class="facets-textarea" placeholder="Paste the full job description here — bullets or paragraphs both work."></textarea>
-                  <div class="weights-actions" style="margin-top:6px">
-                    <button class="btn btn-ghost" id="extract-facets">✂ Extract facets from text</button>
+                  <div class="weights-actions end" style="margin-top:8px">
+                    <button class="btn btn-ghost" id="extract-facets">✂ Extract facets</button>
                   </div>
                 </details>
-                <div class="weights-actions" style="margin-top:8px">
-                  <button class="btn btn-ghost" id="save-facets">💾 Save facets &amp; re-rank</button>
+                <div class="weights-actions end" style="margin-top:10px">
+                  <button class="btn btn-primary" id="save-facets">💾 Save facets &amp; re-rank</button>
                 </div>
               </div>
               <div class="weights-col">
                 <div class="col-title">Experience curve (years)</div>
+                <div id="exp-band" class="exp-band">
+                  <div class="exp-track">
+                    <div class="exp-band-fill"></div>
+                    <div class="exp-ideal-fill"></div>
+                  </div>
+                  <div class="exp-caption"></div>
+                </div>
                 <div id="experience-grid"></div>
-                <div class="weights-actions" style="margin-top:8px">
-                  <button class="btn btn-ghost" id="save-experience">💾 Save curve &amp; re-rank</button>
+                <div class="weights-actions" style="margin-top:14px">
                   <button class="btn btn-ghost" id="reset-discovery">↺ Reset JD</button>
+                  <button class="btn btn-primary" id="save-experience">💾 Save curve &amp; re-rank</button>
                 </div>
               </div>
             </div>
@@ -233,6 +240,7 @@
         <div class="tool-actions">
           <button class="btn btn-primary" id="rank-btn">🔦 Rank candidates</button>
           <span class="note" id="src-note">Scoring the preloaded sample of 100 candidates.</span>
+          <span class="rank-status" id="rank-status"></span>
         </div>
 
         <div class="error-banner" id="error"></div>

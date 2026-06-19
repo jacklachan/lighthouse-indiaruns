@@ -199,6 +199,30 @@
     var btn = $("#rank-btn");
     btn.disabled = on;
     btn.textContent = on ? "Sweeping…" : "🔦 Rank candidates";
+    // Quiet re-ranks (slider / gate / preset) skip the full sweep, so give them a
+    // visible cue — otherwise a change that only moves deep ranks looks like a dead button.
+    if (on && quiet) setRankStatus("re-ranking…", "busy");
+  }
+
+  function setRankStatus(text, cls) {
+    var el = $("#rank-status");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "rank-status" + (cls ? " " + cls : "") + (text ? " show" : "");
+  }
+
+  // Diff two ranked lists by candidate_id -> rank. null on the first render
+  // (nothing to compare against yet).
+  function computeMovement(prev, next) {
+    if (!prev || !prev.length) return null;
+    var was = {};
+    prev.forEach(function (r) { was[r.candidate_id] = r.rank; });
+    var moved = 0, inTop = 0;
+    next.forEach(function (r) {
+      var p = was[r.candidate_id];
+      if (p != null && p !== r.rank) { moved++; if (r.rank <= 20 || p <= 20) inTop++; }
+    });
+    return { moved: moved, inTop: inTop, was: was };
   }
 
   function rank(opts) {
@@ -242,9 +266,25 @@
    *  Render results
    * ------------------------------------------------------------------ */
   function render(data) {
-    state.lastRows = data.rows || [];
+    var newRows = data.rows || [];
+    var move = computeMovement(state.lastRows, newRows);   // null on first render
+    var wasMap = move ? move.was : null;
+    state.lastRows = newRows;
     var results = $("#results");
     results.classList.add("show");
+
+    // Tell the user a re-rank happened and how much actually moved — deep-only
+    // shuffles (gate toggles, gate-only presets) otherwise read as "nothing changed".
+    if (move) {
+      if (move.moved === 0) {
+        setRankStatus("No movement — these settings don't reorder this sample", "flat");
+      } else {
+        setRankStatus("Re-ranked · " + move.moved + " moved" +
+          (move.inTop ? " · " + move.inTop + " in top 20" : " (all below top 20)"), "ok");
+      }
+    } else {
+      setRankStatus("", "");
+    }
 
     // metrics
     var s = data.summary || {};
@@ -257,8 +297,11 @@
     // table
     var tbody = $("#rows");
     tbody.innerHTML = "";
-    (data.rows || []).forEach(function (r) {
+    newRows.forEach(function (r) {
       var tr = document.createElement("tr");
+      if (wasMap && wasMap[r.candidate_id] != null && wasMap[r.candidate_id] !== r.rank) {
+        tr.setAttribute("data-moved", "");   // brief highlight on rows that shifted
+      }
       var rankCls = r.rank === 1 ? "rank-pill top" : "rank-pill";
       var hp = r.honeypot ? ' <span class="hp-badge">⚠ honeypot</span>' : "";
       // Per-row gate badges: each fired hard-negative shown as a small chip
@@ -432,7 +475,8 @@
 
   var rerankTimer = null;
   function scheduleRerank() {
-    if (!state.lastRankBody) return; // user hasn't ranked yet — nothing to re-rank
+    // Any control change re-ranks. In upload mode with no file, rank() shows an
+    // error and returns; in sample mode there is always something to re-rank.
     clearTimeout(rerankTimer);
     rerankTimer = setTimeout(function () { rank({ quiet: true }); }, 320);
   }
@@ -598,6 +642,7 @@
     }).then(function (d) {
       setLoading(false);
       $("#facets-input").value = (d.facets || []).join("\n");
+      updateFacetCount();
     }).catch(function (err) { setLoading(false); showError(err.message); });
   }
 
@@ -646,11 +691,14 @@
     ]).then(function (results) {
       var f = results[0];
       $("#facets-input").value = (f.facets || []).join("\n");
+      updateFacetCount();
       var e = results[1];
       renderExperienceGrid(e);
     }).catch(function () {
       $("#facets-input").placeholder = "Could not load JD facets.";
     });
+
+    $("#facets-input").addEventListener("input", updateFacetCount);
 
     $("#save-facets").addEventListener("click", function () {
       var lines = $("#facets-input").value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean);
@@ -712,6 +760,7 @@
         ]);
       }).then(function (results) {
         $("#facets-input").value = (results[0].facets || []).join("\n");
+        updateFacetCount();
         renderExperienceGrid(results[1]);
         $("#discovery-status").textContent = "Defaults loaded";
         setLoading(false);
@@ -720,18 +769,55 @@
     });
   }
 
+  var EXP_FIELDS = ["band_min", "ideal_min", "ideal_max", "band_max"];
+
   function renderExperienceGrid(e) {
-    var fields = [
-      ["band_min", "Band min"],
-      ["ideal_min", "Ideal min"],
-      ["ideal_max", "Ideal max"],
-      ["band_max", "Band max"]
-    ];
-    $("#experience-grid").innerHTML = fields.map(function (f) {
-      var v = e[f[0]];
-      return '<div class="exp-row"><label>' + f[1] + '</label>' +
-        '<input type="number" id="exp-' + f[0] + '" min="0" step="0.5" value="' + v + '" /></div>';
+    var labels = { band_min: "Band min", ideal_min: "Ideal min", ideal_max: "Ideal max", band_max: "Band max" };
+    $("#experience-grid").innerHTML = EXP_FIELDS.map(function (f) {
+      return '<div class="exp-row"><label>' + labels[f] + '</label>' +
+        '<input type="number" id="exp-' + f + '" min="0" step="0.5" value="' + e[f] + '" /></div>';
     }).join("");
+    $$("#experience-grid input[type=number]").forEach(function (inp) {
+      inp.addEventListener("input", renderExperienceBand);
+    });
+    renderExperienceBand();
+  }
+
+  function fmtY(x) { return (Math.round(x * 10) / 10).toString().replace(/\.0$/, ""); }
+
+  function expVals() {
+    return EXP_FIELDS.map(function (f) {
+      var el = $("#exp-" + f);
+      var v = el ? parseFloat(el.value) : NaN;
+      return isNaN(v) ? 0 : v;
+    });
+  }
+
+  // Live picture of the experience curve: shade the acceptable [band_min,band_max]
+  // span and the brighter ideal [ideal_min,ideal_max] zone on a 0..band_max track.
+  function renderExperienceBand() {
+    var host = $("#exp-band");
+    if (!host) return;
+    var v = expVals();
+    var bmin = v[0], imin = v[1], imax = v[2], bmax = v[3];
+    var top = Math.max(bmax, imax, bmin, 1) * 1.12;   // headroom so band_max isn't at the edge
+    function pct(x) { return Math.max(0, Math.min(100, (x / top) * 100)); }
+    var band = host.querySelector(".exp-band-fill");
+    var ideal = host.querySelector(".exp-ideal-fill");
+    band.style.left = pct(bmin) + "%";
+    band.style.width = Math.max(0, pct(bmax) - pct(bmin)) + "%";
+    ideal.style.left = pct(imin) + "%";
+    ideal.style.width = Math.max(0, pct(imax) - pct(imin)) + "%";
+    host.querySelector(".exp-caption").innerHTML =
+      'Acceptable <strong>' + fmtY(bmin) + "–" + fmtY(bmax) + "</strong> yrs · ideal <strong>" +
+      fmtY(imin) + "–" + fmtY(imax) + "</strong> yrs";
+  }
+
+  function updateFacetCount() {
+    var el = $("#facet-count");
+    if (!el) return;
+    var n = ($("#facets-input").value || "").split("\n").map(function (l) { return l.trim(); }).filter(Boolean).length;
+    el.textContent = n + (n === 1 ? " facet" : " facets");
   }
 
   /* ------------------------------------------------------------------ */
@@ -746,5 +832,6 @@
     initDiscovery();
     $("#rank-btn").addEventListener("click", function () { rank(); });
     $("#download-btn").addEventListener("click", downloadCsv);
+    rank();   // auto-rank the sample on load: table is live and every later tweak re-ranks
   });
 })();
