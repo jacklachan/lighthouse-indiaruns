@@ -495,6 +495,33 @@ def _reweight_records(records: list[dict], weights: dict[str, float]) -> None:
             r["final_score"] = round(base * r["gate_mult"] * r["behavior_mult"], 6)
 
 
+def _candidate_embeddings(raws: list[dict]) -> tuple[np.ndarray, dict[str, int]]:
+    """Encode the candidates' text blobs once and cache by content.
+
+    Component weights, gate toggles and facet edits never change a candidate's
+    embedding — so after the first encode of a given batch every re-rank reuses
+    these vectors and the CPU-heavy model never runs again (this is what was
+    pegging the Space at ~99% CPU: ranker._embeddings_for re-instantiated the
+    model and re-encoded all 100 candidates on every slider/gate/preset change).
+
+    Returns the matrix (row i -> raws[i]) plus the candidate_id -> row map, to
+    inject into ``art`` so ranker._embeddings_for finds every vector precomputed.
+    Vectors are identical to encoding on the fly (same cached encoder, same
+    build_text_blob), so the ranking is unchanged.
+    """
+    blobs = [loader.build_text_blob(r) for r in raws]
+    key = _jsonl_hash("\x01".join(blobs))
+    emb = _embed_cache_get(key)
+    if emb is None or emb.shape[0] != len(raws):
+        model = _get_encoder()
+        emb = model.encode(blobs, normalize_embeddings=True, convert_to_numpy=True).astype(
+            np.float32
+        )
+        _embed_cache_put(key, emb)
+    id_to_row = {loader.candidate_id(r): i for i, r in enumerate(raws)}
+    return emb, id_to_row
+
+
 def _rank(
     raws: list[dict],
     weights: dict[str, float] | None = None,
@@ -512,7 +539,12 @@ def _rank(
     """
     st = _state()
     rubric = st["rubric"]
-    art = st["art"]
+    # Inject cached candidate embeddings so weight/gate/facet re-ranks skip the
+    # encoder (the 99%-CPU hot path). Per-call copy picks up live facet edits
+    # (set_facets_endpoint mutates st["art"]["facet_emb"]); the vectors are
+    # identical to on-the-fly encoding, so the ranking is unchanged.
+    emb, id_to_row = _candidate_embeddings(raws)
+    art = {**st["art"], "cand_emb": emb, "id_to_row": id_to_row}
 
     records = ranker.score_all(raws, art, skip_gates=skip_gates)
     if weights is not None:
