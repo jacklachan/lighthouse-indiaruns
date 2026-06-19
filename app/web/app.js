@@ -109,7 +109,8 @@
     weights: null,
     gates: [],          // [{key, label, desc}]
     skipGates: {},      // {key: bool}  true = disabled
-    lastRankBody: null
+    lastRankBody: null,
+    rawById: null       // {candidate_id: raw record} for the detail modal (lazy)
   };
 
   /* Hand-tuned presets — each one snaps both the weight sliders and the
@@ -147,6 +148,7 @@
 
   function setMode(mode) {
     state.mode = mode;
+    state.rawById = null;   // source changed -> drop the detail-modal raw cache
     $$("#mode button").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-mode") === mode); });
     $("#upload-pane").style.display = mode === "upload" ? "block" : "none";
     $("#src-note").textContent = mode === "sample"
@@ -181,6 +183,7 @@
     reader.onload = function () {
       state.fileText = reader.result;
       state.fileName = file.name;
+      state.rawById = null;   // new upload -> drop the detail-modal raw cache
       $("#file-name").textContent = "✓ " + file.name;
       $("#src-note").textContent = "Ready to score " + file.name + ".";
     };
@@ -299,6 +302,7 @@
     tbody.innerHTML = "";
     newRows.forEach(function (r) {
       var tr = document.createElement("tr");
+      tr.setAttribute("data-cid", r.candidate_id);   // click -> detail modal
       if (wasMap && wasMap[r.candidate_id] != null && wasMap[r.candidate_id] !== r.rank) {
         tr.setAttribute("data-moved", "");   // brief highlight on rows that shifted
       }
@@ -325,7 +329,10 @@
       tbody.appendChild(tr);
     });
     $$("#rows .similar-btn").forEach(function (b) {
-      b.addEventListener("click", function () { findSimilar(b.getAttribute("data-cid")); });
+      b.addEventListener("click", function (e) { e.stopPropagation(); findSimilar(b.getAttribute("data-cid")); });
+    });
+    $$("#rows tr").forEach(function (tr) {
+      tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-cid")); });
     });
     if (hasAnime) {
       window.anime({ targets: "#rows tr", translateY: [14, 0], opacity: [0, 1], delay: window.anime.stagger(35), duration: 480, easing: "easeOutCubic" });
@@ -384,6 +391,167 @@
       });
     };
     bd.addEventListener("toggle", function () { if (bd.open) animateBars(); }, { once: false });
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Candidate detail modal (click a row -> profile + score breakdown)
+   * ------------------------------------------------------------------ */
+  function parseJsonlMap(text) {
+    var m = {};
+    (text || "").split("\n").forEach(function (ln) {
+      ln = ln.trim();
+      if (!ln) return;
+      try { var r = JSON.parse(ln); if (r && r.candidate_id) m[r.candidate_id] = r; } catch (e) { /* skip */ }
+    });
+    return m;
+  }
+
+  // Raw records for the current source, cached. Upload mode reuses the text the
+  // user already provided; sample mode fetches /api/sample once (~74KB gzipped).
+  function ensureRaws() {
+    if (state.rawById) return Promise.resolve(state.rawById);
+    if (state.mode === "upload" && state.fileText) {
+      state.rawById = parseJsonlMap(state.fileText);
+      return Promise.resolve(state.rawById);
+    }
+    return fetch("/api/sample")
+      .then(function (res) { return res.text(); })
+      .then(function (txt) { state.rawById = parseJsonlMap(txt); return state.rawById; })
+      .catch(function () { state.rawById = {}; return state.rawById; });
+  }
+
+  function yrsFromMonths(m) {
+    if (m == null || m < 0) return "";
+    var y = Math.round((m / 12) * 10) / 10;
+    return y + (y === 1 ? " yr" : " yrs");
+  }
+
+  function detailScoreHtml(row) {
+    var comps = row.components || {};
+    var html = '<div class="detail-section"><h4>Why this rank</h4>';
+    html += '<p class="detail-reason">' + esc(row.reasoning || "") + "</p>";
+    html += '<div class="detail-score">';
+    Object.keys(COMP_LABELS).forEach(function (k) {
+      if (comps[k] == null) return;
+      var pct = Math.max(0, Math.min(1, comps[k])) * 100;
+      html +=
+        '<div class="comp-row"><div class="top"><span class="name">' + COMP_LABELS[k] + "</span>" +
+        '<span class="val">' + Number(comps[k]).toFixed(3) + "</span></div>" +
+        '<div class="comp-track"><div class="comp-fill" style="width:' + pct.toFixed(1) + '%"></div></div></div>';
+    });
+    html += "</div>";
+    html +=
+      '<div class="mult-grid">' +
+        '<div class="mult"><div class="k">Base</div><div class="v">' + esc(row.base) + "</div></div>" +
+        '<div class="mult"><div class="k">Gate ×</div><div class="v">×' + esc(row.gate_mult) + "</div></div>" +
+        '<div class="mult"><div class="k">Behavior ×</div><div class="v">×' + esc(row.behavior_mult) + "</div></div>" +
+        '<div class="mult"><div class="k">Honeypot</div><div class="v" style="color:' +
+          (row.honeypot ? "var(--danger)" : "var(--good)") + '">' + (row.honeypot ? "flagged" : "clean") + "</div></div>" +
+      "</div>";
+    var notes = (row.gate_reasons || []).concat(row.behavior_facts || []);
+    if (notes.length) {
+      html += '<div class="reasons-list"><ul>' + notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul></div>";
+    }
+    return html + "</div>";
+  }
+
+  function detailProfileHtml(raw) {
+    if (!raw) return '<div class="detail-section"><p class="note">Profile detail unavailable for this candidate.</p></div>';
+    var p = raw.profile || {};
+    var html = "";
+    if (p.headline || p.summary) {
+      html += '<div class="detail-section"><h4>Summary</h4>';
+      if (p.headline) html += '<p class="detail-headline">' + esc(p.headline) + "</p>";
+      if (p.summary) html += '<p class="detail-summary">' + esc(p.summary) + "</p>";
+      html += "</div>";
+    }
+    var skills = raw.skills || [];
+    if (skills.length) {
+      html += '<div class="detail-section"><h4>Skills</h4><div class="chip-row">';
+      skills.forEach(function (s) {
+        html += '<span class="skill-chip">' + esc(s.name) + (s.proficiency ? "<small> · " + esc(s.proficiency) + "</small>" : "") + "</span>";
+      });
+      html += "</div></div>";
+    }
+    var hist = raw.career_history || [];
+    if (hist.length) {
+      html += '<div class="detail-section"><h4>Experience</h4>';
+      hist.forEach(function (h) {
+        var when = (h.start_date || "") + (h.end_date ? " – " + h.end_date : (h.is_current ? " – present" : ""));
+        var dur = yrsFromMonths(h.duration_months);
+        html += '<div class="career-row"><div><strong>' + esc(h.title || "—") + "</strong> · " + esc(h.company || "") + "</div>" +
+          '<div class="muted-cell">' + esc(when) + (dur ? " · " + dur : "") + (h.industry ? " · " + esc(h.industry) : "") + "</div></div>";
+      });
+      html += "</div>";
+    }
+    var edu = raw.education || [];
+    if (edu.length) {
+      html += '<div class="detail-section"><h4>Education</h4>';
+      edu.forEach(function (e) {
+        html += '<div class="career-row"><div><strong>' + esc(e.degree || "—") + (e.field_of_study ? ", " + esc(e.field_of_study) : "") + "</strong></div>" +
+          '<div class="muted-cell">' + esc(e.institution || "") + (e.tier ? " · " + esc(e.tier) : "") + "</div></div>";
+      });
+      html += "</div>";
+    }
+    var sig = raw.redrob_signals || {};
+    var kvs = [];
+    function pct(label, v) { if (typeof v === "number" && v >= 0) kvs.push([label, Math.round(v * 100) + "%"]); }
+    pct("Recruiter response", sig.recruiter_response_rate);
+    pct("Interview completion", sig.interview_completion_rate);
+    if (sig.last_active_date) kvs.push(["Last active", String(sig.last_active_date)]);
+    kvs.push(["Open to work", sig.open_to_work_flag ? "yes" : "no"]);
+    if (typeof sig.notice_period_days === "number" && sig.notice_period_days >= 0) kvs.push(["Notice", sig.notice_period_days + " days"]);
+    if (typeof sig.saved_by_recruiters_30d === "number" && sig.saved_by_recruiters_30d >= 0) kvs.push(["Recruiter saves (30d)", String(sig.saved_by_recruiters_30d)]);
+    var verified = [sig.verified_email ? "email" : "", sig.verified_phone ? "phone" : ""].filter(Boolean).join(" + ");
+    kvs.push(["Verified", verified || "no"]);
+    html += '<div class="detail-section"><h4>Signals</h4><div class="signal-grid">';
+    kvs.forEach(function (kv) { html += '<div class="signal"><span class="sk">' + esc(kv[0]) + '</span><span class="sv">' + esc(kv[1]) + "</span></div>"; });
+    html += "</div></div>";
+    return html;
+  }
+
+  function renderDetail(row, raw) {
+    var p = (raw && raw.profile) || {};
+    var name = p.anonymized_name || row.candidate_id;
+    var head =
+      '<div class="detail-head">' +
+        '<div class="detail-rank">#' + row.rank + "</div>" +
+        '<div class="detail-id"><div class="detail-name">' + esc(name) + "</div>" +
+          '<div class="detail-cid">' + esc(row.candidate_id) + " · score " + esc(row.score) + "</div></div>" +
+        (row.honeypot ? '<span class="hp-badge">⚠ honeypot</span>' : "") +
+      "</div>" +
+      '<div class="detail-sub">' + esc(row.title || p.current_title || "—") +
+        (p.current_company ? " @ " + esc(p.current_company) : "") +
+        (p.current_industry ? " · " + esc(p.current_industry) : "") + "</div>" +
+      '<div class="detail-sub muted-cell">' + esc(p.location || p.country || "") +
+        (row.yrs != null ? " · " + row.yrs + " yrs experience" : "") + "</div>";
+    $("#detail-body").innerHTML = head + detailScoreHtml(row) + detailProfileHtml(raw);
+  }
+
+  function openDetail(cid) {
+    if (!cid || !state.lastRows) return;
+    var row = null;
+    for (var i = 0; i < state.lastRows.length; i++) {
+      if (state.lastRows[i].candidate_id === cid) { row = state.lastRows[i]; break; }
+    }
+    if (!row) return;
+    $("#detail-body").innerHTML = '<p class="note">Loading…</p>';
+    $("#detail-modal").hidden = false;
+    document.body.classList.add("modal-open");
+    ensureRaws().then(function (map) { renderDetail(row, map ? map[cid] : null); });
+  }
+
+  function closeDetail() {
+    $("#detail-modal").hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+
+  function initDetailModal() {
+    var modal = $("#detail-modal");
+    if (!modal) return;
+    $("#detail-close").addEventListener("click", closeDetail);
+    modal.addEventListener("click", function (e) { if (e.target === modal) closeDetail(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closeDetail(); });
   }
 
   /* ------------------------------------------------------------------ *
@@ -825,6 +993,7 @@
     setMode("sample");
     initWeights();
     initDiscovery();
+    initDetailModal();
     $("#rank-btn").addEventListener("click", function () { rank(); });
     $("#download-btn").addEventListener("click", downloadCsv);
     rank();   // auto-rank the sample on load: table is live and every later tweak re-ranks

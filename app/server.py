@@ -642,6 +642,12 @@ def _rank(
                 "gate_mult": rec["gate_mult"],
                 "gate_reasons": rec["gate_reasons"],
                 "reasoning": reasoning.generate(raw, rubric, rec, context=context),
+                # Per-row scoring breakdown for the click-to-view detail modal
+                # (already computed on rec; additive — ranking unchanged).
+                "components": rec["components"],
+                "base": rec["base"],
+                "behavior_mult": rec["behavior_mult"],
+                "behavior_facts": rec["behavior_facts"],
             }
         )
 
