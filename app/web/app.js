@@ -317,7 +317,7 @@
       tr.innerHTML =
         '<td><span class="' + rankCls + '">' + r.rank + "</span></td>" +
         '<td><div class="cid">' + esc(r.candidate_id) +
-          ' <button class="similar-btn" data-cid="' + esc(r.candidate_id) + '" title="Find similar candidates">📡</button></div>' +
+          ' <button class="similar-btn" data-cid="' + esc(r.candidate_id) + '" title="Find similar candidates">similar</button></div>' +
           '<div class="score-bar"><span style="right:' + (100 - Math.max(0, Math.min(1, r.score)) * 100).toFixed(1) + '%"></span></div></td>' +
         '<td><div>' + esc(r.title || "—") + hp + gateChips + '</div><div class="muted-cell">' + esc(r.country || "") + "</div></td>" +
         '<td class="muted-cell">' + (r.yrs != null ? r.yrs : "—") + "</td>" +
@@ -333,17 +333,10 @@
 
     renderBreakdown(data.breakdown, data.weights || {});
 
-    // reveal score bars after paint
-    requestAnimationFrame(function () {
-      $$("#rows .score-bar > span").forEach(function (sp, i) {
-        var target = sp.style.right;
-        sp.style.right = "100%";
-        if (hasAnime) window.anime({ targets: sp, right: target, duration: 800, delay: 120 + i * 18, easing: "easeOutCubic" });
-        else sp.style.right = target;
-      });
-    });
-
-    results.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // Score bars keep the inline `right:X%` width set in the row HTML, so they
+    // render filled immediately and survive every re-render. A CSS transition on
+    // `.score-bar > span` handles the grow — no JS collapse-then-animate (that
+    // left bars stuck at width 0 / colorless on quiet re-ranks).
   }
 
   var COMP_LABELS = {
@@ -808,6 +801,8 @@
     band.style.width = Math.max(0, pct(bmax) - pct(bmin)) + "%";
     ideal.style.left = pct(imin) + "%";
     ideal.style.width = Math.max(0, pct(imax) - pct(imin)) + "%";
+    var maxEl = document.getElementById("exp-scale-max");
+    if (maxEl) maxEl.textContent = fmtY(top) + " yrs";
     host.querySelector(".exp-caption").innerHTML =
       'Acceptable <strong>' + fmtY(bmin) + "–" + fmtY(bmax) + "</strong> yrs · ideal <strong>" +
       fmtY(imin) + "–" + fmtY(imax) + "</strong> yrs";

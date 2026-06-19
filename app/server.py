@@ -495,31 +495,85 @@ def _reweight_records(records: list[dict], weights: dict[str, float]) -> None:
             r["final_score"] = round(base * r["gate_mult"] * r["behavior_mult"], 6)
 
 
-def _candidate_embeddings(raws: list[dict]) -> tuple[np.ndarray, dict[str, int]]:
-    """Encode the candidates' text blobs once and cache by content.
+def _sample_emb_map() -> dict[str, np.ndarray]:
+    """Precomputed embeddings for the fixed demo sample (``sample_cand_emb.npy``),
+    sliced offline from the official ``cand_emb.npy`` by ``scripts/build_sample_emb.py``.
 
-    Component weights, gate toggles and facet edits never change a candidate's
-    embedding — so after the first encode of a given batch every re-rank reuses
-    these vectors and the CPU-heavy model never runs again (this is what was
-    pegging the Space at ~99% CPU: ranker._embeddings_for re-instantiated the
-    model and re-encoded all 100 candidates on every slider/gate/preset change).
-
-    Returns the matrix (row i -> raws[i]) plus the candidate_id -> row map, to
-    inject into ``art`` so ranker._embeddings_for finds every vector precomputed.
-    Vectors are identical to encoding on the fly (same cached encoder, same
-    build_text_blob), so the ranking is unchanged.
+    Lets the sample / preset / weight / gate / experience-curve path rank with ZERO
+    model inference: the vectors live in RAM and are never recomputed on CPU per
+    request. This is what removes the ~95% CPU spike and sidesteps the encoder's
+    meta-tensor load crash for the common path. Best-effort — a missing/mismatched
+    file yields ``{}`` and the caller falls back to encoding.
     """
-    blobs = [loader.build_text_blob(r) for r in raws]
-    key = _jsonl_hash("\x01".join(blobs))
-    emb = _embed_cache_get(key)
-    if emb is None or emb.shape[0] != len(raws):
-        model = _get_encoder()
-        emb = model.encode(blobs, normalize_embeddings=True, convert_to_numpy=True).astype(
-            np.float32
-        )
-        _embed_cache_put(key, emb)
+    cached = _STATE.get("_sample_emb")
+    if cached is not None:
+        return cached
+    out: dict[str, np.ndarray] = {}
+    path = os.path.join(ART, "sample_cand_emb.npy")
+    try:
+        if os.path.exists(path) and os.path.exists(SAMPLE):
+            emb = np.load(path).astype(np.float32)
+            with open(SAMPLE, encoding="utf-8") as f:
+                ids = [loader.candidate_id(json.loads(ln)) for ln in f if ln.strip()]
+            if emb.shape[0] == len(ids):
+                out = {cid: emb[i] for i, cid in enumerate(ids)}
+            else:
+                _LOG.warning(
+                    "sample_cand_emb rows %d != sample ids %d; ignoring", emb.shape[0], len(ids)
+                )
+    except Exception as ex:  # noqa: BLE001
+        _LOG.warning("sample emb load failed: %s", ex)
+    _STATE["_sample_emb"] = out
+    return out
+
+
+def _candidate_embeddings(raws: list[dict]) -> tuple[np.ndarray, dict[str, int]]:
+    """Embedding matrix (row i -> raws[i]) + candidate_id -> row map for ``art``.
+
+    Uses the RAM-resident precomputed sample vectors where available; only ids NOT
+    in the sample (custom uploads) hit the encoder — and those are content-cached.
+    Component weights, gate toggles and facet edits never change a candidate's
+    embedding, so the sample path here is pure lookups: no model load, no CPU spike.
+    Vectors are identical to encoding on the fly (same model, same build_text_blob),
+    so the ranking is unchanged.
+    """
+    semb = _sample_emb_map()
+    hits: dict[int, np.ndarray] = {}
+    missing_idx: list[int] = []
+    missing_blobs: list[str] = []
+    for i, raw in enumerate(raws):
+        v = semb.get(loader.candidate_id(raw))
+        if v is not None:
+            hits[i] = v
+        else:
+            missing_idx.append(i)
+            missing_blobs.append(loader.build_text_blob(raw))
+
+    enc = None
+    if missing_blobs:
+        key = _jsonl_hash("\x01".join(missing_blobs))
+        enc = _embed_cache_get(key)
+        if enc is None or enc.shape[0] != len(missing_blobs):
+            model = _get_encoder()
+            enc = model.encode(
+                missing_blobs, normalize_embeddings=True, convert_to_numpy=True
+            ).astype(np.float32)
+            _embed_cache_put(key, enc)
+
+    if hits:
+        dim = int(next(iter(hits.values())).shape[0])
+    elif enc is not None:
+        dim = int(enc.shape[1])
+    else:
+        dim = int(_state()["art"]["facet_emb"].shape[1])
+
+    out = np.zeros((len(raws), dim), dtype=np.float32)
+    for i, vec in hits.items():
+        out[i] = vec
+    for j, i in enumerate(missing_idx):
+        out[i] = enc[j]  # type: ignore[index]
     id_to_row = {loader.candidate_id(r): i for i, r in enumerate(raws)}
-    return emb, id_to_row
+    return out, id_to_row
 
 
 def _rank(
@@ -539,10 +593,10 @@ def _rank(
     """
     st = _state()
     rubric = st["rubric"]
-    # Inject cached candidate embeddings so weight/gate/facet re-ranks skip the
-    # encoder (the 99%-CPU hot path). Per-call copy picks up live facet edits
-    # (set_facets_endpoint mutates st["art"]["facet_emb"]); the vectors are
-    # identical to on-the-fly encoding, so the ranking is unchanged.
+    # Inject precomputed candidate embeddings so the sample path never loads the
+    # encoder (removes the ~95% CPU spike + the meta-tensor crash). Per-call copy
+    # picks up live facet edits (set_facets_endpoint mutates st["art"]["facet_emb"]);
+    # the vectors are identical to on-the-fly encoding, so the ranking is unchanged.
     emb, id_to_row = _candidate_embeddings(raws)
     art = {**st["art"], "cand_emb": emb, "id_to_row": id_to_row}
 

@@ -4,6 +4,10 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sentence-transformers==3.3.1
+# Pin transformers (a transitive dep): unpinned, a rebuild pulled a newer version
+# that lazy-inits weights on the `meta` device -> "Cannot copy out of meta tensor"
+# crash. 4.46.3 is compatible with sentence-transformers 3.3.1 and predates that.
+transformers==4.46.3
 torch==2.5.1
 numpy==2.2.6
 pandas==2.3.3

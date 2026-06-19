@@ -147,6 +147,8 @@
       </div>
 
       <div class="tool-card reveal">
+        <div class="studio">
+          <div class="studio-controls">
         <div class="segmented" id="mode">
           <button data-mode="sample" class="active">Preloaded sample (100)</button>
           <button data-mode="upload">Upload JSONL (≤100)</button>
@@ -190,6 +192,7 @@
                     <div class="exp-band-fill"></div>
                     <div class="exp-ideal-fill"></div>
                   </div>
+                  <div class="exp-scale"><span>0</span><span id="exp-scale-max"></span></div>
                   <div class="exp-caption"></div>
                 </div>
                 <div id="experience-grid"></div>
@@ -242,7 +245,9 @@
           <span class="note" id="src-note">Scoring the preloaded sample of 100 candidates.</span>
           <span class="rank-status" id="rank-status"></span>
         </div>
+          </div><!-- /studio-controls -->
 
+          <div class="studio-results">
         <div class="error-banner" id="error"></div>
 
         <div class="loading" id="loading">
@@ -299,6 +304,8 @@
             <button class="btn btn-ghost" id="download-btn">⬇️ Download ranking CSV</button>
           </div>
         </div>
+          </div><!-- /studio-results -->
+        </div><!-- /studio -->
       </div>
     </div>
   </section>
