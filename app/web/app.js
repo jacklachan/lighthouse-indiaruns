@@ -354,22 +354,33 @@
     trust_skills: "Trust-weighted skills"
   };
 
+  // Component-score bars, shared by the breakdown panel and the detail modal.
+  // weights truthy  -> annotate "· w X" and leave fills for anime (data-pct);
+  // weights null    -> static inline width (the modal has no anime/toggle hook).
+  function compBarsHtml(comps, weights) {
+    comps = comps || {};
+    var html = "";
+    Object.keys(COMP_LABELS).forEach(function (k) {
+      if (comps[k] == null) return;
+      var pct = (Math.max(0, Math.min(1, comps[k])) * 100).toFixed(1);
+      var small = weights ? "<small>" + (weights[k] != null ? " · w " + weights[k] : "") + "</small>" : "";
+      var fill = weights
+        ? '<div class="comp-fill" data-pct="' + pct + '"></div>'
+        : '<div class="comp-fill" style="width:' + pct + '%"></div>';
+      html +=
+        '<div class="comp-row"><div class="top"><span class="name">' + COMP_LABELS[k] + small + "</span>" +
+        '<span class="val">' + Number(comps[k]).toFixed(3) + "</span></div>" +
+        '<div class="comp-track">' + fill + "</div></div>";
+    });
+    return html;
+  }
+
   function renderBreakdown(b, weights) {
     var host = $("#breakdown-body");
     if (!b) { host.innerHTML = '<p class="note">No candidate to break down.</p>'; return; }
     var comps = b.components || {};
     var html = '<div class="note" style="margin-bottom:18px">Top candidate <strong style="color:var(--text)">' + esc(b.candidate_id) + "</strong> · base score " + esc(b.base) + "</div>";
-    Object.keys(COMP_LABELS).forEach(function (k) {
-      if (comps[k] == null) return;
-      var pct = Math.max(0, Math.min(1, comps[k])) * 100;
-      var w = weights[k] != null ? " · w " + weights[k] : "";
-      html +=
-        '<div class="comp-row">' +
-          '<div class="top"><span class="name">' + COMP_LABELS[k] + "<small>" + w + "</small></span>" +
-          '<span class="val">' + Number(comps[k]).toFixed(3) + "</span></div>" +
-          '<div class="comp-track"><div class="comp-fill" data-pct="' + pct.toFixed(1) + '"></div></div>' +
-        "</div>";
-    });
+    html += compBarsHtml(comps, weights || {});
     html +=
       '<div class="mult-grid">' +
         '<div class="mult"><div class="k">Gate multiplier</div><div class="v">×' + esc(b.gate_mult) + "</div></div>" +
@@ -430,18 +441,9 @@
     var comps = row.components || {};
     var html = '<div class="detail-section"><h4>Why this rank</h4>';
     html += '<p class="detail-reason">' + esc(row.reasoning || "") + "</p>";
-    html += '<div class="detail-score">';
-    Object.keys(COMP_LABELS).forEach(function (k) {
-      if (comps[k] == null) return;
-      var pct = Math.max(0, Math.min(1, comps[k])) * 100;
-      html +=
-        '<div class="comp-row"><div class="top"><span class="name">' + COMP_LABELS[k] + "</span>" +
-        '<span class="val">' + Number(comps[k]).toFixed(3) + "</span></div>" +
-        '<div class="comp-track"><div class="comp-fill" style="width:' + pct.toFixed(1) + '%"></div></div></div>';
-    });
-    html += "</div>";
+    html += '<div class="detail-score">' + compBarsHtml(comps, null) + "</div>";
     html +=
-      '<div class="mult-grid">' +
+      '<div class="mult-grid mult-grid-4">' +
         '<div class="mult"><div class="k">Base</div><div class="v">' + esc(row.base) + "</div></div>" +
         '<div class="mult"><div class="k">Gate ×</div><div class="v">×' + esc(row.gate_mult) + "</div></div>" +
         '<div class="mult"><div class="k">Behavior ×</div><div class="v">×' + esc(row.behavior_mult) + "</div></div>" +
@@ -528,6 +530,7 @@
     $("#detail-body").innerHTML = head + detailScoreHtml(row) + detailProfileHtml(raw);
   }
 
+  var detailToken = 0;
   function openDetail(cid) {
     if (!cid || !state.lastRows) return;
     var row = null;
@@ -535,10 +538,14 @@
       if (state.lastRows[i].candidate_id === cid) { row = state.lastRows[i]; break; }
     }
     if (!row) return;
+    var token = ++detailToken;   // only the most recent click renders
     $("#detail-body").innerHTML = '<p class="note">Loading…</p>';
     $("#detail-modal").hidden = false;
     document.body.classList.add("modal-open");
-    ensureRaws().then(function (map) { renderDetail(row, map ? map[cid] : null); });
+    ensureRaws().then(function (map) {
+      if (token !== detailToken) return;   // a newer click superseded this fetch
+      renderDetail(row, map ? map[cid] : null);
+    });
   }
 
   function closeDetail() {

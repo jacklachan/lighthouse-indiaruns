@@ -785,6 +785,10 @@ body.modal-open { overflow: hidden; }
 .detail-sub { margin-top: 8px; font-size: 14px; color: var(--text); }
 .detail-sub.muted-cell { color: var(--faint); margin-top: 3px; font-size: 13px; }
 
+/* modal score section has 4 multipliers (Base/Gate/Behavior/Honeypot), unlike
+   the breakdown panel's 3 — give it its own column count so none wraps alone. */
+.mult-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
 .detail-section { margin-top: 22px; }
 .detail-section h4 {
   font-family: var(--font-display); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
@@ -814,4 +818,5 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 600px) {
   .modal-card { padding: 22px 18px 24px; border-radius: 14px; }
   .signal-grid { grid-template-columns: 1fr; }
+  .mult-grid-4 { grid-template-columns: repeat(2, 1fr); }
 }
