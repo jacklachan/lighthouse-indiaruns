@@ -33,7 +33,12 @@ _ACADEMIC_NAME_TERMS = (
     "research lab",
     "national lab",
 )
-_ACADEMIC_INDUSTRY_TERMS = ("academia", "education", "research", "university")
+# "education" as an INDUSTRY is too broad — it sweeps in edtech *product*
+# companies (Byju's/Coursera-style), wrongly denying their engineers a
+# product-role credit and tripping gate_research_only. Genuine academia is
+# caught by _ACADEMIC_NAME_TERMS (university/institute/IIT…) or the narrower
+# industry terms below.
+_ACADEMIC_INDUSTRY_TERMS = ("academia", "research", "university")
 
 
 def _is_academic_employer(name: str, industry: str) -> bool:
@@ -193,6 +198,22 @@ def _has_word(text: str, word: str) -> bool:
     return pat.search(text) is not None
 
 
+def _skill_grounded(haystack: str, name: str) -> bool:
+    """Is skill ``name`` actually present in the candidate's career text?
+
+    Whole-word match for alphanumeric names so short skills (R, Go, C, AI, ML)
+    don't spuriously match inside ordinary words ('ai' in 'domain'). Symbolic
+    names (C++, C#, .NET) break ``\\b`` boundaries, so fall back to a substring
+    test — those tokens are distinctive enough not to false-match.
+    """
+    n = name.lower().strip()
+    if not n:
+        return True  # nothing to ground; never counts against the candidate
+    if n[0].isalnum() and n[-1].isalnum():
+        return _has_word(haystack, name)
+    return n in haystack
+
+
 def _seniority_level(title: str) -> int:
     """Coarse 0-3 seniority rank from a title.
 
@@ -279,7 +300,7 @@ def gate_unbacked_expertise(raw: dict, rubric: dict, text: str) -> tuple[float, 
     haystack = (loader._s(p, "summary") + " ").lower()
     for h in loader.get_career(raw):
         haystack += (h["title"] + " " + h["description"] + " ").lower()
-    ungrounded = [name for name in expert_skills if name.lower() not in haystack]
+    ungrounded = [name for name in expert_skills if not _skill_grounded(haystack, name)]
     if len(ungrounded) != len(expert_skills):
         return 1.0, ""
     return (

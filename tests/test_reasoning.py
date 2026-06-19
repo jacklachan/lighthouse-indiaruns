@@ -166,7 +166,8 @@ def test_lift_clause_names_cheapest_component_bump(rubric):
     above = dict(rec)
     above["candidate_id"] = "CAND_ABOVE"
     above["rank"] = 11
-    above["final_score"] = 0.55  # deficit 0.02
+    above["base"] = 0.52  # raw-final lead of 0.02 (gate/behavior = 1.0)
+    above["final_score"] = 0.55
     text = reasoning.generate(raw, rubric, rec, context={"above": above})
     assert "CAND_ABOVE" in text, text
     assert "overtake" in text.lower(), text

@@ -63,6 +63,27 @@ def test_duration_date_mismatch_flags():
     assert hp
 
 
+def test_dates_present_but_duration_missing_not_flagged():
+    # Honest role: real 48-month span, duration_months omitted (loader collapses
+    # missing -> 0). A missing field must not read as "stated 0mo vs 48mo".
+    c = make_candidate(
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "ML Engineer",
+                "start_date": "2018-01-01",
+                "end_date": "2022-01-01",
+                "is_current": False,
+                "industry": "Tech",
+                "company_size": "51-200",
+                "description": "work",
+            }
+        ]
+    )
+    hp, reasons = honeypot.detect(c)
+    assert not any("implied by dates" in r for r in reasons)
+
+
 def test_tenure_overflows_experience_flags():
     # 3 yrs experience but roles summing to 120 months
     c = make_candidate(

@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -160,15 +161,27 @@ def _build_art(rubric, facet_emb, sem_lo, sem_hi) -> dict:
     }
 
 
+_STATE_LOCK = threading.Lock()
+
+
 def _state() -> dict:
-    if not _STATE:
+    # Guard on "art", not truthiness: _get_encoder() writes _STATE["_encoder"],
+    # which would otherwise satisfy `if not _STATE` and skip the rubric/art load
+    # (-> KeyError later). Lock + double-check prevents two first-requests from
+    # double-loading. "art" is written LAST so any fast-path reader that sees it
+    # sees a fully-populated _STATE.
+    if "art" in _STATE:
+        return _STATE
+    with _STATE_LOCK:
+        if "art" in _STATE:
+            return _STATE
         rubric, facet_emb, sem_lo, sem_hi = _facets_and_rubric()
         _STATE["rubric"] = rubric
-        _STATE["art"] = _build_art(rubric, facet_emb, sem_lo, sem_hi)
         # Snapshot for /api/reset.
         _STATE["default_rubric"] = json.loads(json.dumps(rubric))
         _STATE["default_facet_emb"] = facet_emb.copy()
         _STATE["default_facets"] = list(rubric.get("facets", []))
+        _STATE["art"] = _build_art(rubric, facet_emb, sem_lo, sem_hi)
     return _STATE
 
 
@@ -394,8 +407,8 @@ def _validate_facet_weights(weights: list[float] | None, n: int) -> list[float] 
             f = float(w)
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail="facet weight not numeric") from None
-        if f < 0:
-            raise HTTPException(status_code=400, detail="facet weights must be >= 0")
+        if not math.isfinite(f) or f < 0:
+            raise HTTPException(status_code=400, detail="facet weights must be finite and >= 0")
         out.append(f)
     if sum(out) <= 0:
         raise HTTPException(status_code=400, detail="facet weights must sum to > 0")
@@ -438,8 +451,8 @@ def _validate_weights(weights: dict) -> dict[str, float]:
             f = float(v)
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail=f"weight {k} not numeric") from None
-        if f < 0:
-            raise HTTPException(status_code=400, detail=f"weight {k} must be >= 0")
+        if not math.isfinite(f) or f < 0:
+            raise HTTPException(status_code=400, detail=f"weight {k} must be finite and >= 0")
         cleaned[k] = f
     for k in COMPONENT_KEYS:
         cleaned.setdefault(k, 0.0)

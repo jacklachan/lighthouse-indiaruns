@@ -254,6 +254,21 @@ def _near_miss_clause(raw: dict, rubric: dict, record: dict) -> str:
     return " Close call: " + msgs[0] + "."
 
 
+def _raw_final(rec: dict) -> float:
+    """Un-normalized final = base x gate_mult x behavior_mult.
+
+    Callers may normalize `final_score` (divide by the top score) before
+    reasoning runs; the components/weights/multipliers are always raw, so the
+    lift clause works in this raw space to keep `deficit` and `leverage`
+    consistent.
+    """
+    return (
+        rec.get("base", 0.0)
+        * (rec.get("gate_mult", 1.0) or 1.0)
+        * (rec.get("behavior_mult", 1.0) or 1.0)
+    )
+
+
 def _lift_clause(record: dict, context: dict, rubric: dict) -> str:
     """Cheapest realistic move that would push this candidate over the row above.
 
@@ -273,13 +288,13 @@ def _lift_clause(record: dict, context: dict, rubric: dict) -> str:
     above = context.get("above")
     if not isinstance(above, dict) or record.get("honeypot"):
         return ""
-    a_score = above.get("final_score")
-    my_score = record.get("final_score")
     a_rank = above.get("rank")
     a_id = above.get("candidate_id")
-    if a_score is None or my_score is None or a_rank is None or not a_id:
+    if a_rank is None or not a_id:
         return ""
-    deficit = a_score - my_score
+    # Raw-score space so `deficit` matches `leverage` units even when the caller
+    # normalized final_score by the top score (see _raw_final).
+    deficit = _raw_final(above) - _raw_final(record)
     if deficit <= 0 or deficit > 0.05:
         return ""  # already ahead or too far back for a single-bump story
 
@@ -296,8 +311,8 @@ def _lift_clause(record: dict, context: dict, rubric: dict) -> str:
             continue
         headroom = max(0.0, 1.0 - comps.get(k, 0.0))
         needed = deficit / leverage
-        if needed > headroom or needed > 0.25:
-            continue  # cannot close, or would require a wholesale change
+        if needed > headroom or needed > 0.25 or round(needed, 2) <= 0:
+            continue  # cannot close, too big, or rounds to a meaningless +0.00
         candidates.append((needed, k))
     if not candidates:
         return ""

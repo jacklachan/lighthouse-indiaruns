@@ -117,6 +117,58 @@ def test_services_gate_not_fired_with_prior_product(rubric):
     assert not any("services" in r for r in reasons)
 
 
+def test_unbacked_expertise_fires_on_short_skill_substrings(rubric):
+    # Stuffer: 5 expert skills whose names are substrings of ordinary words
+    # ('ai' in 'trained', 'c' in 'across'). Pre-fix substring matching read them
+    # as grounded and the gate never fired; word-boundary matching catches it.
+    c = make_candidate(
+        skills=[
+            {"name": s, "proficiency": "expert", "endorsements": 0, "duration_months": 24}
+            for s in ("AI", "ML", "Go", "R", "C")
+        ],
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "Analyst",
+                "start_date": "2018-01-01",
+                "end_date": None,
+                "duration_months": 60,
+                "is_current": True,
+                "industry": "Finance",
+                "company_size": "201-500",
+                "description": "Worked across the retail domain; trained junior staff.",
+            }
+        ],
+    )
+    mult, reason = gates.gate_unbacked_expertise(c, rubric, "")
+    assert mult < 1.0
+    assert reason
+
+
+def test_unbacked_expertise_not_fired_when_skills_grounded(rubric):
+    c = make_candidate(
+        skills=[
+            {"name": s, "proficiency": "expert", "endorsements": 5, "duration_months": 36}
+            for s in ("Embeddings", "PyTorch", "NLP", "Ranking", "Retrieval")
+        ],
+        career_history=[
+            {
+                "company": "Acme",
+                "title": "ML Engineer",
+                "start_date": "2018-01-01",
+                "end_date": None,
+                "duration_months": 60,
+                "is_current": True,
+                "industry": "Tech",
+                "company_size": "201-500",
+                "description": "Built Embeddings and Ranking with PyTorch; NLP and Retrieval systems.",
+            }
+        ],
+    )
+    mult, reason = gates.gate_unbacked_expertise(c, rubric, "")
+    assert mult == 1.0
+
+
 def test_title_chaser_gate_fires_on_escalation(rubric):
     titles = ["ML Engineer", "Senior ML Engineer", "Staff ML Engineer", "Principal ML Engineer"]
     roles = []

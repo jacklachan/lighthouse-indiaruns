@@ -62,6 +62,15 @@ def raw_semantic_fit(
         w = np.asarray(facet_weights, dtype=np.float32)
         if w.shape != (cos.shape[1],):
             raise ValueError(f"facet_weights shape {w.shape} != ({cos.shape[1]},) facet count")
+        # Rescale to mean 1.0 so weights express RELATIVE emphasis without
+        # inflating the overall scale. Otherwise a weight > 1 pushes weighted
+        # cosines past the stored (unweighted) p5/p95 bounds and
+        # normalize_semantic clips a mass of candidates to 1.0, flattening
+        # discrimination on the very facet the recruiter up-weighted. Uniform
+        # weights collapse to all-1.0 (no-op), matching facet_weights=None.
+        s = float(w.sum())
+        if s > 0:
+            w = w * (w.shape[0] / s)
         cos = cos * w[None, :]
     n_facets = cos.shape[1]
     k = min(TOP_K_FACETS, n_facets)
@@ -150,7 +159,9 @@ def behavioral_modifier(raw: dict, rubric: dict) -> tuple[float, list[str]]:
         delta += 0.02
 
     ic = sig.get("interview_completion_rate")
-    if isinstance(ic, (int, float)) and ic > 0:
+    # >= 0 (not > 0): a genuine 0.0 completion must reach the < 0.3 penalty below,
+    # consistent with the notice/saves sentinel guards; only -1/None is skipped.
+    if isinstance(ic, (int, float)) and ic >= 0:
         if ic >= b["good_interview_completion"]:
             delta += 0.02
         elif ic < 0.3:

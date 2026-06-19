@@ -77,7 +77,12 @@ def detect(raw: dict) -> tuple[bool, list[str]]:
             reasons.append(f"role at {h['company']} starts in the future ({sd.isoformat()})")
         if sd and ed and ed < sd:
             reasons.append(f"role at {h['company']} ends before it starts")
-        if sd and ed:
+        # dm > 0 guard: the loader collapses a MISSING duration_months to 0
+        # (loader._i default), so without this an honest role that has dates but
+        # omits duration_months would read as "stated 0mo vs Nmo" and flag the
+        # whole profile as a honeypot. Only an actual stated duration can
+        # contradict the dates.
+        if sd and ed and dm > 0:
             span = _months_between(sd, ed)
             if span >= 0 and abs(span - dm) > 9:
                 reasons.append(
