@@ -18,9 +18,6 @@ sentence-transformers==3.3.1
 torch==2.5.1
 rank-bm25==0.2.2
 
-# ---- sandbox app ----
-streamlit==1.40.2
-
 # ---- deck generation ----
 python-pptx==1.0.2
 

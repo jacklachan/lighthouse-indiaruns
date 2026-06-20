@@ -331,9 +331,6 @@
     $$("#rows .similar-btn").forEach(function (b) {
       b.addEventListener("click", function (e) { e.stopPropagation(); findSimilar(b.getAttribute("data-cid")); });
     });
-    $$("#rows tr").forEach(function (tr) {
-      tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-cid")); });
-    });
     if (hasAnime) {
       window.anime({ targets: "#rows tr", translateY: [14, 0], opacity: [0, 1], delay: window.anime.stagger(35), duration: 480, easing: "easeOutCubic" });
     }
@@ -533,10 +530,7 @@
   var detailToken = 0;
   function openDetail(cid) {
     if (!cid || !state.lastRows) return;
-    var row = null;
-    for (var i = 0; i < state.lastRows.length; i++) {
-      if (state.lastRows[i].candidate_id === cid) { row = state.lastRows[i]; break; }
-    }
+    var row = state.lastRows.find(function (r) { return r.candidate_id === cid; });
     if (!row) return;
     var token = ++detailToken;   // only the most recent click renders
     $("#detail-body").innerHTML = '<p class="note">Loading…</p>';
@@ -556,6 +550,12 @@
   function initDetailModal() {
     var modal = $("#detail-modal");
     if (!modal) return;
+    // Delegated row click: #rows is the persistent tbody, so one listener bound
+    // here outlives every re-render. The .similar-btn stopPropagation still shields it.
+    $("#rows").addEventListener("click", function (e) {
+      var tr = e.target.closest("tr");
+      if (tr) openDetail(tr.getAttribute("data-cid"));
+    });
     $("#detail-close").addEventListener("click", closeDetail);
     modal.addEventListener("click", function (e) { if (e.target === modal) closeDetail(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closeDetail(); });
