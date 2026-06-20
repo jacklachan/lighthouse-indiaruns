@@ -94,11 +94,16 @@ GATE_META: dict[str, dict[str, str]] = {
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Boot-time wiring for the sandbox: load state, replay persisted overrides,
-    and warm the encoder in a background thread so the first /api/facets call
-    doesn't eat the ~10 s SentenceTransformer instantiation cost. All work is
-    best-effort — a missing torch install or a malformed override file gets
-    logged, not raised, so the server still serves the static UI."""
+    """Boot-time wiring for the sandbox: load state + replay persisted overrides.
+    Best-effort — a missing torch install or a malformed override file gets logged,
+    not raised, so the server still serves the static UI.
+
+    The encoder is deliberately NOT loaded at boot. Precomputed sample embeddings
+    cover the rank/demo path, so the model is needed only for facet edits / uploads /
+    look-alike search and is loaded lazily on first use. A model-free boot keeps
+    startup fast and CPU-light on cpu-basic (2 vCPU) — otherwise a ~30-60 s torch +
+    transformers load would saturate the box right as the Space's readiness probe
+    runs, leaving the badge stuck on "App starting"."""
     try:
         _state()
     except Exception as ex:  # noqa: BLE001
@@ -109,14 +114,6 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
         _replay_overrides()
     except Exception as ex:  # noqa: BLE001
         _LOG.warning("override replay failed: %s", ex)
-
-    def _warm() -> None:
-        try:
-            _get_encoder()
-        except Exception as ex:  # noqa: BLE001
-            _LOG.info("encoder warm skipped: %s", ex)
-
-    threading.Thread(target=_warm, daemon=True, name="encoder-warm").start()
     yield
 
 
