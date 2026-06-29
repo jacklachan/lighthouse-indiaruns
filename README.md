@@ -35,6 +35,17 @@ Self-labeled NDCG/MAP numbers (composite **0.998 vs 0.553** baseline) live in
 absolute accuracy. The *gap* to the baseline and the ablation deltas are the meaningful
 signal there, not the saturated absolute.
 
+> **About the live demo.** The hosted Space ranks a fixed **stress-test sample of 100**
+> candidates (`app/sample_candidates.jsonl`) — roughly half real AI/ML engineers, half
+> deliberate traps (non-technical roles, honeypots, services-only, off-location). It is
+> a *visualization* of how gates work, not the submission. Expect to see Accountants /
+> Customer Support / etc. appear in the demo's ranked list — they sit at the bottom
+> with visible gate badges and crushed scores (50-200× below the top engineer), and any
+> honeypot scores exactly 0.0. The numbers above ("0 honeypots", "100/100 AI titles")
+> refer to the **official submission**, the full 100K → top 100, committed to
+> [`submission.csv`](submission.csv). Reproduce both with `python rank.py …`;
+> details in [`docs/sample_evidence.md`](docs/sample_evidence.md).
+
 ---
 
 ## How this maps to the brief
