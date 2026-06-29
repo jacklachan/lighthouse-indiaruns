@@ -35,16 +35,18 @@ Self-labeled NDCG/MAP numbers (composite **0.998 vs 0.553** baseline) live in
 absolute accuracy. The *gap* to the baseline and the ablation deltas are the meaningful
 signal there, not the saturated absolute.
 
-> **About the live demo.** The hosted Space ranks a fixed **stress-test sample of 100**
-> candidates (`app/sample_candidates.jsonl`) — roughly half real AI/ML engineers, half
-> deliberate traps (non-technical roles, honeypots, services-only, off-location). It is
-> a *visualization* of how gates work, not the submission. Expect to see Accountants /
-> Customer Support / etc. appear in the demo's ranked list — they sit at the bottom
-> with visible gate badges and crushed scores (50-200× below the top engineer), and any
-> honeypot scores exactly 0.0. The numbers above ("0 honeypots", "100/100 AI titles")
-> refer to the **official submission**, the full 100K → top 100, committed to
-> [`submission.csv`](submission.csv). Reproduce both with `python rank.py …`;
-> details in [`docs/sample_evidence.md`](docs/sample_evidence.md).
+> **About the live demo.** The hosted Space ranks a fixed **100-candidate sample** —
+> the **actual top 80 of the full 100K ranking** (i.e. rows 1-80 of `submission.csv`)
+> plus 20 deliberate traps (10 keyword-stuffers in non-engineering roles, 10 honeypots)
+> drawn from the same 100K. So the demo's ranks 1-80 are byte-identical to the
+> submission's top 80; ranks 81-90 are the keyword-stuffers, each carrying a
+> NON-TECHNICAL gate badge and a crushed score (≈40× below the lowest engineer);
+> ranks 91-100 are the honeypots, every one scoring exactly 0.0. The headline numbers
+> above ("0 honeypots", "100/100 AI titles") refer to the official submission in
+> [`submission.csv`](submission.csv) — and because the demo's top 80 *is* that
+> submission's top 80, the live Space is now an in-browser replay of the official
+> ranking. Details + reproducible numbers in
+> [`docs/sample_evidence.md`](docs/sample_evidence.md).
 
 ---
 

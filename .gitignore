@@ -3,7 +3,9 @@ data/candidates.jsonl
 data/*.jsonl
 # The challenge bundle (brackets must be escaped — they are a gitignore glob class)
 \[PUB\] India_runs_data_and_ai_challenge/
+\[PUB\] India_runs_data_and_ai_challenge.zip
 *India_runs_data_and_ai_challenge/
+*India_runs_data_and_ai_challenge*.zip
 __MACOSX/
 *.DS_Store
 .DS_Store

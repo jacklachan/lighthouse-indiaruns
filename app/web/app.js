@@ -152,7 +152,7 @@
     $$("#mode button").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-mode") === mode); });
     $("#upload-pane").style.display = mode === "upload" ? "block" : "none";
     $("#src-note").textContent = mode === "sample"
-      ? "Stress-test sample: ~50 real engineers + ~50 traps. Gates demote traps; honeypots zero out."
+      ? "Sample: submission's top 80 + 10 stuffers + 10 honeypots. Ranks 1-80 = engineers, 81-90 = gated, 91-100 = zeroed."
       : (state.fileName ? "Ready to score " + state.fileName + "." : "Drop or choose a JSONL file (≤100 candidates).");
   }
 

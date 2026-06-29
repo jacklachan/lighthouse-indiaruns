@@ -144,7 +144,7 @@
         <div class="eyebrow">Try it live</div>
         <h2 class="section-title">Rank a batch of candidates.</h2>
         <p class="section-sub">Use the preloaded 100-candidate sample or upload your own JSONL (≤100). The <code>bge-small</code> encoder runs at request time on CPU — a few seconds — then the full ranker scores, gates, and explains every row.</p>
-        <p class="section-sub" style="margin-top:8px;padding:10px 14px;border-left:3px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:4px"><strong>Note on the sample:</strong> this 100-candidate batch is a deliberate <em>stress test</em> — about half are real AI/ML engineers, the rest are traps (non-technical roles with stuffed keywords, honeypots, services-only, off-location). Watch the gates demote the traps to the bottom and zero out honeypots. The official submission (top 100 of 100,000) contains zero traps; see the headline evidence on the README.</p>
+        <p class="section-sub" style="margin-top:8px;padding:10px 14px;border-left:3px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:4px"><strong>Note on the sample:</strong> this 100-candidate batch is the <strong>actual top 80 from the 100K submission</strong> plus 20 seeded traps (10 keyword-stuffers, 10 honeypots). Expect ranks 1-80 = real engineers (= <code>submission.csv</code> rows 1-80); ranks 81-90 = stuffers with a NON-TECHNICAL badge; ranks 91-100 = honeypots scoring 0.0. The demo is a live in-browser replay of the official ranking, with the gates' behavior made visible.</p>
       </div>
 
       <div class="tool-card reveal">
@@ -243,7 +243,7 @@
 
         <div class="tool-actions">
           <button class="btn btn-primary" id="rank-btn">🔦 Rank candidates</button>
-          <span class="note" id="src-note">Stress-test sample: ~50 real engineers + ~50 traps. Gates demote traps; honeypots zero out.</span>
+          <span class="note" id="src-note">Sample: submission's top 80 + 10 stuffers + 10 honeypots. Ranks 1-80 = engineers, 81-90 = gated, 91-100 = zeroed.</span>
           <span class="rank-status" id="rank-status"></span>
         </div>
           </div><!-- /studio-controls -->
