@@ -176,14 +176,14 @@ def main():
             ("0 honeypots in the top-100 (audited over full 100K; DQ threshold >10%). All 100/100 hold an AI/ML/IR/DS/Search/NLP title — 0 non-technical; the sample_submission instead ranks HR/Accountants at #1–20.", 1),
             ("Trap resistance: the keyword baseline puts 13/32 keyword-stuffers in its top-25; Lighthouse admits 0. Remove the anti-trap stack and honeypots climb (median rank 209→143).", 1),
             ("Directional only (self-labeled — NOT absolute accuracy): vs keyword baseline composite 0.998 vs 0.553. Labeler & ranker share assumptions, so a ~perfect NDCG@10 = internal consistency, not validated accuracy — the gap + ablation deltas are the signal. A blind human-label harness ships for an independent check.", 0),
-            (f"Constraints met: rank step CPU-only, no network, {args.runtime} over 100K; embeddings precomputed (~75 MB fp16); 63 tests green.", 0),
+            (f"Constraints met: rank step CPU-only, no network, {args.runtime} over 100K; embeddings precomputed (~75 MB fp16); 127 tests green.", 0),
         ],
         "Technologies Used": [
             ("sentence-transformers BAAI/bge-small-en-v1.5 — small, CPU-friendly, strong retrieval quality; precomputed so rank-time needs no model.", 0),
             ("rank_bm25 — optional offline lexical index; precomputed but never loaded at rank-time (ranking is semantic + deterministic features).", 0),
             ("numpy / pandas — the entire rank step: fast, deterministic, dependency-light (fits the 5-min / 16 GB / CPU box).", 0),
             ("Claude (offline only) — JD→rubric parsing and eval labeling; never called at rank-time, no candidate data sent to any API.", 0),
-            ("pytest (63 tests), FastAPI + vanilla JS + anime.js (HF sandbox), python-pptx + matplotlib (this deck).", 0),
+            ("pytest (127 tests), FastAPI + vanilla JS + anime.js (HF sandbox), python-pptx + matplotlib (this deck).", 0),
         ],
         "Submission Assets": [
             ("GitHub: https://github.com/jacklachan/lighthouse-indiaruns", 0),

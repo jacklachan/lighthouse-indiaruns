@@ -5,6 +5,24 @@ All notable changes to this project are documented here. The format is loosely b
 
 ## [Unreleased]
 
+### Changed (Demo sample — alignment with the official submission)
+- **`app/sample_candidates.jsonl` rebuilt** so the live HF Space ranks the
+  actual top 80 of the 100K submission plus 20 visible traps (10 keyword-
+  stuffers, 10 honeypots). The demo's ranks 1–80 are now byte-identical to
+  `submission.csv` rows 1–80, so the live UI is an in-browser replay of the
+  official ranking rather than a separate stress-test batch.
+- **`non_technical_role` gate penalty tightened 0.25 → 0.05** in
+  `artifacts/jd_rubric.json`. Non-engineering current-titles now sink ~40×
+  below the lowest real engineer. Submission ranking is unchanged (real
+  engineers never trip the gate).
+- **`artifacts/sample_cand_emb.npy` regenerated** from the new sample via
+  `scripts/build_sample_emb.py`.
+- **`docs/sample_evidence.md` (new)** records the measured top-/bottom-band
+  composition and reproduce commands.
+- **README, in-app banner, and deck Results slide** rewritten to describe the
+  new sample composition. Test count refs updated 63/124 → 127, coverage
+  refs 86% → 87%.
+
 ### Added (Discovery surface — final pass)
 - **`POST /api/similar_pool` — 100K look-alike.** Searches the full
   precomputed candidate-embedding pool (`artifacts/cand_emb.npy`) by cosine
