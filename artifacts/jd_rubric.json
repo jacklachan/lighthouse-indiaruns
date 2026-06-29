@@ -128,7 +128,7 @@
     {
       "key": "non_technical_role",
       "label": "Non-engineering current role (keyword-stuffer bait)",
-      "penalty": 0.25,
+      "penalty": 0.05,
       "rule": "Apply when current_title and the whole career trajectory are clearly non-engineering (marketing/HR/accounting/sales/ops/design/civil/mechanical/content/support) regardless of how many AI skills are listed. This is the primary keyword-stuffer trap. Largely overlaps role_coherence; kept as an explicit gate so the reasoning can name it.",
       "rationale": "Strong penalty (not zero): an Accountant listing 9 AI skills is the canonical trap candidate the sample_submission wrongly ranks #1."
     }
