@@ -65,7 +65,7 @@ A fast index from each thing the challenge evaluates to where this repo satisfie
 | CPU-only, no-network, < 5 min rank | `rank.py` imports only numpy/pandas/pyyaml (`requirements.txt`); declared in `submission_metadata.yaml` |
 | Reproducibility & determinism | seeded (`SEED = 1729`), committed artifacts, `precompute.py`, and CI |
 | Evaluation rigor (no circularity) | self-labeled **and** a blind independent-label harness (`eval/blind_compare.py`) |
-| Code quality & testing | 127 tests + ruff/mypy + an 85% coverage floor, all enforced in CI (`.github/workflows/ci.yml`) |
+| Code quality & testing | 127 tests + ruff/black/mypy + an 85% coverage floor, all enforced in CI (`.github/workflows/ci.yml`) |
 
 ---
 
